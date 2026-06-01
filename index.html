@@ -7,56 +7,73 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button,input,select{font-family:inherit}
+button{touch-action:manipulation}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--tg-theme-bg-color,#f2f2f7);color:var(--tg-theme-text-color,#000);max-width:480px;margin:0 auto;overflow-x:hidden}
 @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes scaleIn{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
 @keyframes checkPop{0%{transform:scale(1)}40%{transform:scale(1.3)}70%{transform:scale(0.9)}100%{transform:scale(1)}}
 @keyframes pill-pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
-.tabbar{background:var(--tg-theme-secondary-bg-color,#fff);border-top:0.5px solid rgba(0,0,0,0.12);display:flex;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 0 6px;cursor:pointer;transition:all 0.2s}
+@keyframes fabFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes fabRing{0%{opacity:.32;transform:scale(.9)}70%,100%{opacity:0;transform:scale(1.35)}}
+@keyframes dotPulse{0%,100%{transform:scale(1);opacity:.72}50%{transform:scale(1.55);opacity:1}}
+@keyframes progressGlow{0%{filter:saturate(1)}50%{filter:saturate(1.35) brightness(1.05)}100%{filter:saturate(1)}}
+@keyframes toastIn{0%{opacity:0;transform:translate(-50%,12px) scale(.96)}18%,82%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,10px) scale(.98)}}
+@keyframes confettiBurst{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(var(--r))}}
+@keyframes emptyWave{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.tabbar{background:var(--tg-theme-secondary-bg-color,#fff);background:color-mix(in srgb,var(--tg-theme-secondary-bg-color,#fff) 94%,transparent);border-top:0.5px solid rgba(0,0,0,0.12);display:flex;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:100;padding-bottom:env(safe-area-inset-bottom);backdrop-filter:blur(18px)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 0 6px;cursor:pointer;transition:all 0.2s;position:relative}
 .tab-icon{font-size:22px;margin-bottom:2px;transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1)}
 .tab-label{font-size:10px;color:#8e8e93;transition:color 0.2s}
-.tab.active .tab-icon{transform:scale(1.1)}
+.tab.active:before{content:'';width:28px;height:3px;border-radius:99px;background:#2481cc;position:absolute;top:0}
+.tab.active .tab-icon{transform:scale(1.12) translateY(-1px)}
 .tab.active .tab-label{color:#2481cc;font-weight:500}
 .page{display:none;padding-bottom:80px;animation:scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1)}
 .page.active{display:block}
-.header{background:var(--tg-theme-secondary-bg-color,#fff);padding:12px 16px 8px;position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
+.header{background:var(--tg-theme-secondary-bg-color,#fff);background:color-mix(in srgb,var(--tg-theme-secondary-bg-color,#fff) 94%,transparent);padding:12px 16px 8px;position:sticky;top:0;z-index:10;backdrop-filter:blur(18px);box-shadow:0 10px 28px rgba(0,0,0,0.04)}
 .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .app-title{font-size:17px;font-weight:600}
 .days-nav{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .days-nav::-webkit-scrollbar{display:none}
-.day-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:5px 10px;border-radius:12px;cursor:pointer;border:none;background:transparent;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1)}
-.day-chip.active{background:#2481cc;transform:scale(1.05)}
+.day-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:5px 10px;border-radius:12px;cursor:pointer;border:none;background:transparent;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow:hidden}
+.day-chip:active{transform:scale(.94)}
+.day-chip.active{background:#2481cc;transform:scale(1.05);box-shadow:0 8px 18px rgba(36,129,204,.28)}
 .day-chip .dn{font-size:10px;color:#8e8e93;transition:color 0.2s}
 .day-chip.active .dn{color:#fff}
 .day-chip .dd{font-size:15px;font-weight:600;color:var(--tg-theme-text-color,#000);transition:color 0.2s}
 .day-chip.active .dd{color:#fff}
 .day-chip.today .dd{color:#2481cc}
 .day-chip.active.today .dd{color:#fff}
-.day-chip .dot{width:4px;height:4px;border-radius:50%;background:#2481cc;margin-top:2px;transition:background 0.2s}
+.day-chip .dot{width:4px;height:4px;border-radius:50%;background:#2481cc;margin-top:2px;transition:background 0.2s;animation:dotPulse 1.8s ease-in-out infinite}
 .day-chip.active .dot{background:rgba(255,255,255,0.7)}
-.filter-bar{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none;background:var(--tg-theme-secondary-bg-color,#fff);border-bottom:0.5px solid rgba(0,0,0,0.07)}
+.filter-bar{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none;background:var(--tg-theme-secondary-bg-color,#fff);background:color-mix(in srgb,var(--tg-theme-secondary-bg-color,#fff) 94%,transparent);border-bottom:0.5px solid rgba(0,0,0,0.07);backdrop-filter:blur(18px)}
 .filter-bar::-webkit-scrollbar{display:none}
-.cat-pill{flex-shrink:0;font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid rgba(0,0,0,0.12);cursor:pointer;background:transparent;color:#666;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1)}
+.cat-pill{flex-shrink:0;font-size:12px;padding:5px 11px;border-radius:20px;border:1px solid rgba(0,0,0,0.12);cursor:pointer;background:transparent;color:#666;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1)}
+.cat-pill:active{transform:scale(.93)}
 .cat-pill.active{color:#fff;border-color:transparent;transform:scale(1.05)}
-.cat-pill.active.c-all{background:#2481cc}
-.cat-pill.active.c-work{background:#5a3fb5}
-.cat-pill.active.c-train{background:#1d9e75}
-.cat-pill.active.c-life{background:#d85a30}
+.cat-pill.active.c-all{background:#2481cc;box-shadow:0 8px 18px rgba(36,129,204,.22)}
+.cat-pill.active.c-work{background:#5a3fb5;box-shadow:0 8px 18px rgba(90,63,181,.22)}
+.cat-pill.active.c-train{background:#1d9e75;box-shadow:0 8px 18px rgba(29,158,117,.22)}
+.cat-pill.active.c-life{background:#d85a30;box-shadow:0 8px 18px rgba(216,90,48,.2)}
 .stats{display:flex;gap:8px;padding:10px 12px 0}
-.stat{flex:1;background:var(--tg-theme-secondary-bg-color,#fff);border-radius:12px;padding:8px;text-align:center;transition:transform 0.2s}
+.stat{flex:1;background:var(--tg-theme-secondary-bg-color,#fff);border-radius:12px;padding:9px;text-align:center;transition:transform 0.2s,box-shadow .2s;box-shadow:0 6px 20px rgba(0,0,0,.035)}
 .stat:active{transform:scale(0.95)}
 .stat-n{font-size:20px;font-weight:600}
 .stat-l{font-size:10px;color:#8e8e93;margin-top:1px}
 .progress-wrap{padding:8px 12px}
-.progress-bar{height:4px;background:rgba(0,0,0,0.08);border-radius:2px;overflow:hidden}
-.progress-fill{height:100%;background:linear-gradient(90deg,#1d9e75,#34c77b);border-radius:2px;transition:width 0.5s cubic-bezier(0.34,1.56,0.64,1)}
+.progress-bar{height:5px;background:rgba(0,0,0,0.08);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#1d9e75,#34c77b,#2481cc);border-radius:99px;transition:width 0.55s cubic-bezier(0.34,1.56,0.64,1);animation:progressGlow 2.4s ease-in-out infinite}
 .tasks-list{padding:8px 12px;display:flex;flex-direction:column;gap:8px}
-.task-card{background:var(--tg-theme-secondary-bg-color,#fff);border-radius:14px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both}
+.task-card{background:var(--tg-theme-secondary-bg-color,#fff);border-radius:14px;padding:12px 12px 12px 14px;display:flex;align-items:flex-start;gap:10px;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1),box-shadow .25s,opacity .25s;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.045)}
+.task-card:before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 99px 99px 0;background:#2481cc}
+.task-card.work:before{background:#5a3fb5}
+.task-card.train:before{background:#1d9e75}
+.task-card.life:before{background:#d85a30}
 .task-card:active{transform:scale(0.98)}
-.task-card.done{opacity:0.45}
-.check{width:24px;height:24px;border-radius:50%;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;cursor:pointer;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);font-size:13px;color:#fff}
+.task-card.done{opacity:0.58}
+.check{width:26px;height:26px;border-radius:50%;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;cursor:pointer;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);font-size:13px;color:#fff;background:transparent}
+.check:active{transform:scale(.86)}
 .check.checked{background:#1d9e75;border-color:#1d9e75;animation:checkPop 0.4s cubic-bezier(0.34,1.56,0.64,1)}
 .task-body{flex:1;min-width:0}
 .task-title{font-size:14px;font-weight:500;line-height:1.4;transition:all 0.3s}
@@ -67,45 +84,53 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cat-badge.work{background:#EEEDFE;color:#3C3489}
 .cat-badge.train{background:#E1F5EE;color:#085041}
 .cat-badge.life{background:#FAECE7;color:#4A1B0C}
-.priority-dot{width:6px;height:6px;border-radius:50%;margin-left:auto;flex-shrink:0;margin-top:8px}
+.repeat-badge{font-size:11px;padding:2px 7px;border-radius:10px;background:rgba(36,129,204,.12);color:#2481cc}
+.task-actions{display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;margin-left:2px}
+.priority-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
 .priority-dot.high{background:#E24B4A}
 .priority-dot.mid{background:#EF9F27}
 .priority-dot.low{background:#97C459}
+.task-delete{width:28px;height:28px;border:none;border-radius:50%;background:rgba(255,59,48,.1);color:#ff3b30;font-size:17px;line-height:1;cursor:pointer;transition:all .2s cubic-bezier(0.34,1.56,0.64,1)}
+.task-delete:active{transform:scale(.86) rotate(8deg);background:rgba(255,59,48,.18)}
 .empty{text-align:center;padding:50px 20px;color:#aaa;font-size:14px;animation:fadeIn 0.3s ease}
-.fab{position:fixed;bottom:calc(60px + env(safe-area-inset-bottom));right:20px;background:#2481cc;color:#fff;border:none;border-radius:50%;width:54px;height:54px;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(36,129,204,0.45);z-index:20;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1)}
-.fab:active{transform:scale(0.92)}
+.empty:before{content:'+';width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;background:rgba(36,129,204,.12);color:#2481cc;font-size:24px;animation:emptyWave 2s ease-in-out infinite}
+.fab{position:fixed;bottom:calc(60px + env(safe-area-inset-bottom));right:20px;background:#2481cc;color:#fff;border:none;border-radius:50%;width:56px;height:56px;font-size:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(36,129,204,0.42);z-index:20;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);animation:fabFloat 3.2s ease-in-out infinite}
+.fab:before{content:'';position:absolute;inset:0;border-radius:50%;background:#2481cc;z-index:-1;animation:fabRing 2.6s ease-out infinite}
+.fab:active{transform:scale(0.9) rotate(45deg)}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:flex-end;backdrop-filter:blur(2px)}
 .overlay.open{display:flex;animation:fadeIn 0.2s ease}
-.sheet{background:var(--tg-theme-bg-color,#f2f2f7);border-radius:20px 20px 0 0;width:100%;padding:20px 16px calc(36px + env(safe-area-inset-bottom));max-height:90vh;overflow-y:auto;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)}
+.sheet{background:var(--tg-theme-bg-color,#f2f2f7);border-radius:20px 20px 0 0;width:100%;padding:20px 16px calc(36px + env(safe-area-inset-bottom));max-height:90vh;overflow-y:auto;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 -18px 42px rgba(0,0,0,.2)}
 .sheet-handle{width:36px;height:4px;background:rgba(0,0,0,0.15);border-radius:2px;margin:0 auto 16px}
 .sheet-title{font-size:16px;font-weight:600;margin-bottom:16px;text-align:center}
 .field{margin-bottom:12px}
 .field label{font-size:12px;color:#8e8e93;margin-bottom:4px;display:block}
-.field input,.field select{width:100%;border:none;border-radius:12px;padding:11px 14px;font-size:14px;background:var(--tg-theme-secondary-bg-color,#fff);color:var(--tg-theme-text-color,#000);font-family:inherit;outline:none}
+.field input,.field select{width:100%;border:none;border-radius:12px;padding:11px 14px;font-size:14px;background:var(--tg-theme-secondary-bg-color,#fff);color:var(--tg-theme-text-color,#000);font-family:inherit;outline:none;box-shadow:0 1px 0 rgba(0,0,0,.03);transition:box-shadow .2s,transform .2s}
+.field input:focus,.field select:focus{box-shadow:0 0 0 3px rgba(36,129,204,.16);transform:translateY(-1px)}
 .field-row{display:flex;gap:8px}
 .field-row .field{flex:1}
 .repeat-days{display:none;gap:6px;flex-wrap:wrap;margin-top:6px}
-.repeat-days.open{display:flex}
-.repeat-day{border:none;border-radius:12px;padding:8px 10px;background:var(--tg-theme-secondary-bg-color,#fff);color:var(--tg-theme-text-color,#000);font-size:12px;cursor:pointer;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1)}
-.repeat-day.active{background:#2481cc;color:#fff;transform:scale(1.05)}
-.btn-save{width:100%;padding:14px;border:none;border-radius:14px;background:#2481cc;color:#fff;cursor:pointer;font-size:15px;font-weight:600;margin-top:4px;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1)}
-.btn-save:active{transform:scale(0.97)}
+.repeat-days.open{display:flex;animation:fadeIn .18s ease}
+.repeat-day{border:none;border-radius:12px;padding:8px 10px;background:var(--tg-theme-secondary-bg-color,#fff);color:var(--tg-theme-text-color,#000);font-size:12px;cursor:pointer;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 4px 14px rgba(0,0,0,.035)}
+.repeat-day:active{transform:scale(.9)}
+.repeat-day.active{background:#2481cc;color:#fff;transform:scale(1.05);box-shadow:0 8px 18px rgba(36,129,204,.24)}
+.btn-save{width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#2481cc,#1d9e75);color:#fff;cursor:pointer;font-size:15px;font-weight:600;margin-top:4px;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 10px 24px rgba(36,129,204,.24)}
+.btn-save:active{transform:scale(0.97);box-shadow:0 5px 14px rgba(36,129,204,.22)}
 .btn-cancel{width:100%;padding:11px;border:none;border-radius:14px;background:transparent;color:#8e8e93;cursor:pointer;font-size:14px;margin-top:4px}
-.vit-header{background:var(--tg-theme-secondary-bg-color,#fff);padding:14px 16px;position:sticky;top:0;z-index:10}
+.vit-header{background:var(--tg-theme-secondary-bg-color,#fff);background:color-mix(in srgb,var(--tg-theme-secondary-bg-color,#fff) 94%,transparent);padding:14px 16px;position:sticky;top:0;z-index:10;backdrop-filter:blur(18px);box-shadow:0 10px 28px rgba(0,0,0,0.04)}
 .vit-header-top{display:flex;align-items:center;justify-content:space-between}
 .vit-title{font-size:17px;font-weight:600}
-.vit-add-btn{background:#2481cc;color:#fff;border:none;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1)}
+.vit-add-btn{background:#2481cc;color:#fff;border:none;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 8px 18px rgba(36,129,204,.22)}
 .vit-add-btn:active{transform:scale(0.95)}
 .vit-date{font-size:13px;color:#8e8e93;margin-top:2px}
 .vit-summary{display:flex;gap:8px;padding:10px 12px}
-.vit-stat{flex:1;background:var(--tg-theme-secondary-bg-color,#fff);border-radius:12px;padding:10px;text-align:center}
+.vit-stat{flex:1;background:var(--tg-theme-secondary-bg-color,#fff);border-radius:12px;padding:10px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.035)}
 .vit-stat-n{font-size:22px;font-weight:600}
 .vit-stat-l{font-size:10px;color:#8e8e93;margin-top:1px}
 .vit-progress-wrap{padding:0 12px 8px}
 .vit-progress-bar{height:6px;background:rgba(0,0,0,0.08);border-radius:3px;overflow:hidden}
 .vit-progress-fill{height:100%;background:linear-gradient(90deg,#ff9500,#ffcc00);border-radius:3px;transition:width 0.5s cubic-bezier(0.34,1.56,0.64,1)}
 .vit-list{padding:8px 12px;display:flex;flex-direction:column;gap:8px}
-.vit-card{background:var(--tg-theme-secondary-bg-color,#fff);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both;transition:all 0.2s}
+.vit-card{background:var(--tg-theme-secondary-bg-color,#fff);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both;transition:all 0.2s;box-shadow:0 8px 24px rgba(0,0,0,.045)}
 .vit-card:active{transform:scale(0.98)}
 .vit-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1)}
 .vit-icon.taken{animation:pill-pop 0.4s cubic-bezier(0.34,1.56,0.64,1)}
@@ -118,10 +143,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .vit-toggle input:checked+.vit-toggle-track{background:#34c759}
 .vit-toggle-thumb{position:absolute;top:2px;left:2px;width:24px;height:24px;background:#fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none}
 .vit-toggle input:checked~.vit-toggle-thumb{transform:translateX(22px)}
-.vit-delete{background:none;border:none;color:#ff3b30;font-size:18px;cursor:pointer;padding:4px 8px;opacity:0.6;transition:opacity 0.2s}
-.vit-delete:active{opacity:1}
+.vit-delete{width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,59,48,.1);color:#ff3b30;font-size:18px;cursor:pointer;padding:0;opacity:0.85;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1)}
+.vit-delete:active{opacity:1;transform:scale(.86) rotate(8deg)}
 .vit-empty{text-align:center;padding:50px 20px;color:#aaa;font-size:14px;animation:fadeIn 0.3s ease}
 .section-label{font-size:13px;font-weight:500;color:#8e8e93;padding:12px 16px 4px;text-transform:uppercase;letter-spacing:0.5px}
+#emojiPicker span{background:var(--tg-theme-secondary-bg-color,#fff);box-shadow:0 4px 14px rgba(0,0,0,.035)}
+.toast{position:fixed;left:50%;bottom:calc(134px + env(safe-area-inset-bottom));z-index:260;background:rgba(24,32,42,.92);color:#fff;border-radius:999px;padding:9px 14px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.toast.show{animation:toastIn 1.6s ease both}
+.confetti-layer{position:fixed;inset:0;pointer-events:none;z-index:255;overflow:hidden}
+.confetti-piece{position:absolute;width:6px;height:10px;border-radius:3px;animation:confettiBurst .9s ease-out forwards}
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
 </style>
 </head>
 <body>
@@ -154,6 +187,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="vit-list" id="vitList"></div>
 </div>
 <button class="fab" id="mainFab" onclick="openSheet()" aria-label="Добавить">+</button>
+<div class="confetti-layer" id="confettiLayer"></div>
+<div class="toast" id="toast"></div>
 <div class="tabbar">
   <div class="tab active" id="tab-planner" onclick="switchTab('planner')">
     <div class="tab-icon">📅</div>
@@ -238,9 +273,37 @@ let filterCat='all';
 let selectedEmoji='💊';
 let currentTab='planner';
 let selectedRepeatDays=[];
+let toastTimer=null;
 function load(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function makeId(prefix){return prefix+Date.now()+Math.floor(Math.random()*10000)}
+function escapeHtml(value){return String(value||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function showToast(text){
+  const toast=document.getElementById('toast');
+  toast.textContent=text;
+  toast.classList.remove('show');
+  void toast.offsetWidth;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toast.classList.remove('show'),1600);
+}
+function showConfetti(){
+  const layer=document.getElementById('confettiLayer');
+  const colors=['#2481cc','#1d9e75','#ef9f27','#e24b4a','#5a3fb5'];
+  for(let i=0;i<18;i++){
+    const piece=document.createElement('span');
+    piece.className='confetti-piece';
+    piece.style.left='50%';
+    piece.style.top='38%';
+    piece.style.background=colors[i%colors.length];
+    piece.style.setProperty('--x',(Math.random()*220-110)+'px');
+    piece.style.setProperty('--y',(Math.random()*170+70)+'px');
+    piece.style.setProperty('--r',(Math.random()*540-270)+'deg');
+    piece.style.animationDelay=(Math.random()*120)+'ms';
+    layer.appendChild(piece);
+    setTimeout(()=>piece.remove(),1100);
+  }
+}
 function dateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function dateForDay(day){
   const d=new Date(today);
@@ -304,22 +367,43 @@ function renderTasks(){
   document.getElementById('progressFill').style.width=pct+'%';
   document.getElementById('statsRow').innerHTML=`<div class="stat"><div class="stat-n">${all.length}</div><div class="stat-l">задач</div></div><div class="stat"><div class="stat-n">${done}</div><div class="stat-l">готово</div></div><div class="stat"><div class="stat-n">${pct}%</div><div class="stat-l">прогресс</div></div>`;
   if(!dt.length){list.innerHTML='<div class="empty">Нет задач на этот день<br>Нажми + чтобы добавить</div>';return}
-  list.innerHTML=dt.map((t,i)=>`<div class="task-card ${t.done?'done':''}" style="animation-delay:${i*0.05}s" id="card-${t.viewId}"><div class="check ${t.done?'checked':''}" onclick="toggle('${t.viewId}')">${t.done?'✓':''}</div><div class="task-body"><div class="task-title">${t.title}</div><div class="task-meta">${t.time?`<span class="task-time">⏰ ${t.time}</span>`:''}<span class="cat-badge ${t.cat}">${taskCatLabel(t.cat)}</span>${t.recurring?'<span class="task-time">↻ повтор</span>':''}</div></div><div class="priority-dot ${t.priority}"></div></div>`).join('');
+  list.innerHTML=dt.map((t,i)=>{
+    const repeatLabel=t.recurring?`<span class="repeat-badge">↻ ${(t.days||[]).map(d=>DAYS[d]).join(' ')}</span>`:'';
+    return `<div class="task-card ${t.cat} ${t.done?'done':''}" style="animation-delay:${i*0.05}s" id="card-${t.viewId}"><button class="check ${t.done?'checked':''}" type="button" onclick="toggle('${t.viewId}')" aria-label="Готово">${t.done?'✓':''}</button><div class="task-body"><div class="task-title">${escapeHtml(t.title)}</div><div class="task-meta">${t.time?`<span class="task-time">⏰ ${escapeHtml(t.time)}</span>`:''}<span class="cat-badge ${t.cat}">${taskCatLabel(t.cat)}</span>${repeatLabel}</div></div><div class="task-actions"><div class="priority-dot ${t.priority}"></div><button class="task-delete" type="button" onclick="deleteTask('${t.viewId}')" aria-label="Удалить">×</button></div></div>`;
+  }).join('');
 }
 function toggle(viewId){
   const key=selectedDateKey();
   const type=viewId.slice(0,1);
   const id=viewId.slice(2);
+  let becameDone=false;
   if(type==='r'){
     if(!recurringDone[key])recurringDone[key]={};
     recurringDone[key][id]=!recurringDone[key][id];
+    becameDone=!!recurringDone[key][id];
     save('planner_recurring_done',recurringDone);
   }else{
     const arr=tasks[key]||[];
     const t=arr.find(x=>String(x.id)===id);
-    if(t){t.done=!t.done;save('planner_tasks_by_date',tasks)}
+    if(t){t.done=!t.done;becameDone=!!t.done;save('planner_tasks_by_date',tasks)}
   }
   renderTasks();buildDays();
+  if(becameDone){showConfetti();showToast('Готово')}
+}
+function deleteTask(viewId){
+  const key=selectedDateKey();
+  const type=viewId.slice(0,1);
+  const id=viewId.slice(2);
+  if(type==='r'){
+    recurringTasks=recurringTasks.filter(t=>String(t.id)!==id);
+    Object.keys(recurringDone).forEach(doneKey=>{if(recurringDone[doneKey])delete recurringDone[doneKey][id]});
+    save('planner_recurring_tasks',recurringTasks);
+    save('planner_recurring_done',recurringDone);
+  }else{
+    tasks[key]=(tasks[key]||[]).filter(t=>String(t.id)!==id);
+    save('planner_tasks_by_date',tasks);
+  }
+  renderTasks();buildDays();showToast('Удалено');
 }
 function setFilter(cat,btn){filterCat=cat;document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));btn.classList.add('active');renderTasks()}
 function openSheet(){selectedRepeatDays=[selectedDay];syncRepeatButtons();document.getElementById('overlay').classList.add('open');setTimeout(()=>document.getElementById('taskInput').focus(),300)}
@@ -351,11 +435,13 @@ function addTask(){
     const days=selectedRepeatDays.length?selectedRepeatDays:[selectedDay];
     recurringTasks.push({...base,id:makeId('r'),days});
     save('planner_recurring_tasks',recurringTasks);
+    showToast('Повтор добавлен');
   }else{
     const key=selectedDateKey();
     if(!tasks[key])tasks[key]=[];
     tasks[key].push({...base,id:makeId('t'),done:false});
     save('planner_tasks_by_date',tasks);
+    showToast('Задача добавлена');
   }
   closeSheet();renderTasks();buildDays();
 }
@@ -377,15 +463,15 @@ function renderVitamins(){
   if(!vitamins.length){list.innerHTML='<div class="vit-empty">Нет витаминов<br>Нажми + чтобы добавить</div>';return}
   list.innerHTML=vitamins.map((v,i)=>{
     const isTaken=!!vitTaken[todayKey][v.id];
-    return `<div class="vit-card" style="animation-delay:${i*0.05}s"><div class="vit-icon ${isTaken?'taken':''}" style="background:${isTaken?'#e8f8f0':'#f2f2f7'}">${v.emoji}</div><div class="vit-info"><div class="vit-name" style="${isTaken?'text-decoration:line-through;color:#999':''}">${v.name}</div><div class="vit-dose">${v.dose||''}</div></div><label class="vit-toggle"><input type="checkbox" ${isTaken?'checked':''} onchange="toggleVit('${v.id}',this.checked)"><span class="vit-toggle-track"></span><span class="vit-toggle-thumb"></span></label><button class="vit-delete" onclick="deleteVit('${v.id}')">✕</button></div>`;
+    return `<div class="vit-card" style="animation-delay:${i*0.05}s"><div class="vit-icon ${isTaken?'taken':''}" style="background:${isTaken?'#e8f8f0':'#f2f2f7'}">${escapeHtml(v.emoji)}</div><div class="vit-info"><div class="vit-name" style="${isTaken?'text-decoration:line-through;color:#999':''}">${escapeHtml(v.name)}</div><div class="vit-dose">${escapeHtml(v.dose||'')}</div></div><label class="vit-toggle"><input type="checkbox" ${isTaken?'checked':''} onchange="toggleVit('${v.id}',this.checked)"><span class="vit-toggle-track"></span><span class="vit-toggle-thumb"></span></label><button class="vit-delete" onclick="deleteVit('${v.id}')" aria-label="Удалить">×</button></div>`;
   }).join('');
 }
-function toggleVit(id,checked){const todayKey=getTodayKey();if(!vitTaken[todayKey])vitTaken[todayKey]={};vitTaken[todayKey][id]=checked;save('planner_vitTaken',vitTaken);setTimeout(()=>renderVitamins(),300)}
-function deleteVit(id){vitamins=vitamins.filter(v=>v.id!==id);save('planner_vitamins',vitamins);renderVitamins()}
+function toggleVit(id,checked){const todayKey=getTodayKey();if(!vitTaken[todayKey])vitTaken[todayKey]={};vitTaken[todayKey][id]=checked;save('planner_vitTaken',vitTaken);if(checked){showConfetti();showToast('Принято')}setTimeout(()=>renderVitamins(),300)}
+function deleteVit(id){vitamins=vitamins.filter(v=>v.id!==id);save('planner_vitamins',vitamins);renderVitamins();showToast('Удалено')}
 function selectEmoji(el,emoji){selectedEmoji=emoji;document.querySelectorAll('#emojiPicker span').forEach(s=>s.style.background='transparent');el.style.background='rgba(36,129,204,0.15)';el.style.transform='scale(1.3)';setTimeout(()=>el.style.transform='scale(1)',200)}
 function openVitSheet(){document.getElementById('vitOverlay').classList.add('open');setTimeout(()=>document.getElementById('vitNameInput').focus(),300)}
 function closeVitSheet(){document.getElementById('vitOverlay').classList.remove('open');document.getElementById('vitNameInput').value='';document.getElementById('vitDoseInput').value='';selectedEmoji='💊'}
-function addVitamin(){const name=document.getElementById('vitNameInput').value.trim();if(!name)return;vitamins.push({id:'v'+Date.now(),name,dose:document.getElementById('vitDoseInput').value.trim(),emoji:selectedEmoji});save('planner_vitamins',vitamins);closeVitSheet();renderVitamins()}
+function addVitamin(){const name=document.getElementById('vitNameInput').value.trim();if(!name)return;vitamins.push({id:'v'+Date.now(),name,dose:document.getElementById('vitDoseInput').value.trim(),emoji:selectedEmoji});save('planner_vitamins',vitamins);closeVitSheet();renderVitamins();showToast('Витамин добавлен')}
 document.getElementById('vitOverlay').addEventListener('click',function(e){if(e.target===this)closeVitSheet()});
 if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.ready();window.Telegram.WebApp.expand()}
 buildDays();renderTasks();
