@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Мой планировщик</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--tg-theme-bg-color,#fff);color:var(--tg-theme-text-color,#000);max-width:480px;margin:0 auto}
+.header{background:var(--tg-theme-secondary-bg-color,#f1f1f1);padding:12px 16px 8px;position:sticky;top:0;z-index:10}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.app-title{font-size:17px;font-weight:600}
+.days-nav{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.days-nav::-webkit-scrollbar{display:none}
+.day-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:5px 10px;border-radius:12px;cursor:pointer;border:none;background:transparent}
+.day-chip.active{background:#2481cc}
+.day-chip .dn{font-size:10px;color:#888}
+.day-chip.active .dn{color:#fff}
+.day-chip .dd{font-size:15px;font-weight:600;color:var(--tg-theme-text-color,#000)}
+.day-chip.active .dd,.day-chip.active .dot{color:#fff}
+.day-chip.today .dd{color:#2481cc}
+.day-chip.active.today .dd{color:#fff}
+.day-chip .dot{width:4px;height:4px;border-radius:50%;background:#2481cc;margin-top:2px}
+.day-chip.active .dot{background:rgba(255,255,255,0.7)}
+.filter-bar{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none;background:var(--tg-theme-secondary-bg-color,#f1f1f1);border-bottom:1px solid rgba(0,0,0,0.07)}
+.filter-bar::-webkit-scrollbar{display:none}
+.cat-pill{flex-shrink:0;font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid rgba(0,0,0,0.15);cursor:pointer;background:transparent;color:#666}
+.cat-pill.active{color:#fff;border-color:transparent}
+.cat-pill.active.c-all{background:#2481cc}
+.cat-pill.active.c-work{background:#5a3fb5}
+.cat-pill.active.c-train{background:#1d9e75}
+.cat-pill.active.c-life{background:#d85a30}
+.stats{display:flex;gap:8px;padding:10px 12px 0}
+.stat{flex:1;background:var(--tg-theme-secondary-bg-color,#f5f5f5);border-radius:10px;padding:8px;text-align:center}
+.stat-n{font-size:20px;font-weight:600}
+.stat-l{font-size:10px;color:#888;margin-top:1px}
+.progress-wrap{padding:8px 12px}
+.progress-bar{height:4px;background:rgba(0,0,0,0.08);border-radius:2px}
+.progress-fill{height:100%;background:#1d9e75;border-radius:2px;transition:width .3s}
+.tasks-list{padding:8px 12px;display:flex;flex-direction:column;gap:8px;padding-bottom:80px}
+.task-card{background:var(--tg-theme-secondary-bg-color,#f9f9f9);border-radius:14px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;transition:opacity .2s}
+.task-card.done{opacity:0.45}
+.check{width:24px;height:24px;border-radius:50%;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;cursor:pointer;transition:all .2s;font-size:13px;color:#fff}
+.check.checked{background:#1d9e75;border-color:#1d9e75}
+.task-body{flex:1;min-width:0}
+.task-title{font-size:14px;font-weight:500;line-height:1.4}
+.task-card.done .task-title{text-decoration:line-through;color:#999}
+.task-meta{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+.task-time{font-size:12px;color:#888}
+.cat-badge{font-size:11px;padding:2px 7px;border-radius:10px}
+.cat-badge.work{background:#EEEDFE;color:#3C3489}
+.cat-badge.train{background:#E1F5EE;color:#085041}
+.cat-badge.life{background:#FAECE7;color:#4A1B0C}
+.priority-dot{width:6px;height:6px;border-radius:50%;margin-left:auto;flex-shrink:0;margin-top:8px}
+.priority-dot.high{background:#E24B4A}
+.priority-dot.mid{background:#EF9F27}
+.priority-dot.low{background:#97C459}
+.empty{text-align:center;padding:50px 20px;color:#aaa;font-size:14px}
+.fab{position:fixed;bottom:24px;right:20px;background:#2481cc;color:#fff;border:none;border-radius:50%;width:54px;height:54px;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(36,129,204,0.4);z-index:20}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:30;align-items:flex-end}
+.overlay.open{display:flex}
+.sheet{background:var(--tg-theme-bg-color,#fff);border-radius:20px 20px 0 0;width:100%;padding:20px 16px 36px;max-height:90vh;overflow-y:auto}
+.sheet-handle{width:36px;height:4px;background:rgba(0,0,0,0.15);border-radius:2px;margin:0 auto 16px}
+.sheet-title{font-size:16px;font-weight:600;margin-bottom:16px;text-align:center}
+.field{margin-bottom:12px}
+.field label{font-size:12px;color:#888;margin-bottom:4px;display:block}
+.field input,.field select{width:100%;border:1px solid rgba(0,0,0,0.12);border-radius:12px;padding:11px 14px;font-size:14px;background:var(--tg-theme-secondary-bg-color,#f5f5f5);color:var(--tg-theme-text-color,#000);font-family:inherit;outline:none}
+.field-row{display:flex;gap:8px}
+.field-row .field{flex:1}
+.btn-save{width:100%;padding:14px;border:none;border-radius:14px;background:#2481cc;color:#fff;cursor:pointer;font-size:15px;font-weight:600;margin-top:4px}
+.btn-cancel{width:100%;padding:11px;border:none;border-radius:14px;background:transparent;color:#888;cursor:pointer;font-size:14px;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-top">
+    <span class="app-title">📅 Мой планировщик</span>
+  </div>
+  <div class="days-nav" id="daysNav"></div>
+</div>
+<div class="filter-bar">
+  <button class="cat-pill active c-all" onclick="setFilter('all',this)">Все</button>
+  <button class="cat-pill c-work" onclick="setFilter('work',this)">💼 Работа</button>
+  <button class="cat-pill c-train" onclick="setFilter('train',this)">🏋️ Тренировки</button>
+  <button class="cat-pill c-life" onclick="setFilter('life',this)">🏠 Дела</button>
+</div>
+<div class="stats" id="statsRow"></div>
+<div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div></div>
+<div class="tasks-list" id="tasksList"></div>
+<button class="fab" onclick="openSheet()" aria-label="Добавить задачу">+</button>
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Новая задача</div>
+    <div class="field"><label>Название</label><input type="text" id="taskInput" placeholder="Что нужно сделать?"></div>
+    <div class="field-row">
+      <div class="field"><label>Время</label><input type="time" id="taskTime"></div>
+      <div class="field"><label>Категория</label>
+        <select id="taskCat">
+          <option value="work">💼 Работа</option>
+          <option value="train">🏋️ Тренировка</option>
+          <option value="life">🏠 Дела</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Приоритет</label>
+      <select id="taskPriority">
+        <option value="high">🔴 Высокий</option>
+        <option value="mid">🟡 Средний</option>
+        <option value="low">🟢 Низкий</option>
+      </select>
+    </div>
+    <button class="btn-save" onclick="addTask()">Добавить задачу</button>
+    <button class="btn-cancel" onclick="closeSheet()">Отмена</button>
+  </div>
+</div>
+<script>
+const DAYS=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+const today=new Date();
+const todayIdx=today.getDay();
+let selectedDay=todayIdx;
+let filterCat='all';
+let nextId=100;
+function loadTasks(){try{return JSON.parse(localStorage.getItem('planner_tasks')||'{}')}catch(e){return{}}}
+function saveTasks(t){localStorage.setItem('planner_tasks',JSON.stringify(t))}
+let tasks=loadTasks();
+function buildDays(){
+  const nav=document.getElementById('daysNav');
+  nav.innerHTML='';
+  for(let i=0;i<7;i++){
+    const d=new Date(today);
+    d.setDate(today.getDate()-todayIdx+i);
+    const dt=(tasks[i]||[]).length>0;
+    const btn=document.createElement('button');
+    btn.className='day-chip'+(i===todayIdx?' today':'')+(i===selectedDay?' active':'');
+    btn.innerHTML=`<span class="dn">${DAYS[i]}</span><span class="dd">${d.getDate()}</span>${dt?'<span class="dot"></span>':'<span style="height:6px"></span>'}`;
+    btn.onclick=()=>{selectedDay=i;buildDays();renderTasks()};
+    nav.appendChild(btn);
+  }
+}
+function renderTasks(){
+  const list=document.getElementById('tasksList');
+  let dt=(tasks[selectedDay]||[]).filter(t=>filterCat==='all'||t.cat===filterCat);
+  dt=dt.sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const all=tasks[selectedDay]||[];
+  const done=all.filter(t=>t.done).length;
+  const pct=all.length?Math.round(done/all.length*100):0;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat"><div class="stat-n">${all.length}</div><div class="stat-l">задач</div></div>
+    <div class="stat"><div class="stat-n">${done}</div><div class="stat-l">готово</div></div>
+    <div class="stat"><div class="stat-n">${pct}%</div><div class="stat-l">прогресс</div></div>`;
+  if(!dt.length){list.innerHTML='<div class="empty">Нет задач на этот день<br>Нажми + чтобы добавить</div>';return}
+  list.innerHTML=dt.map(t=>`
+    <div class="task-card ${t.done?'done':''}" id="card-${t.id}">
+      <div class="check ${t.done?'checked':''}" onclick="toggle(${t.id})">${t.done?'✓':''}</div>
+      <div class="task-body">
+        <div class="task-title">${t.title}</div>
+        <div class="task-meta">
+          ${t.time?`<span class="task-time">⏰ ${t.time}</span>`:''}
+          <span class="cat-badge ${t.cat}">${t.cat==='work'?'💼 Работа':t.cat==='train'?'🏋️ Тренировка':'🏠 Дела'}</span>
+        </div>
+      </div>
+      <div class="priority-dot ${t.priority}"></div>
+    </div>`).join('');
+}
+function toggle(id){
+  const arr=tasks[selectedDay]||[];
+  const t=arr.find(x=>x.id===id);
+  if(t){t.done=!t.done;saveTasks(tasks);renderTasks();buildDays()}
+}
+function setFilter(cat,btn){
+  filterCat=cat;
+  document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  renderTasks();
+}
+function openSheet(){document.getElementById('overlay').classList.add('open');document.getElementById('taskInput').focus()}
+function closeSheet(){document.getElementById('overlay').classList.remove('open');document.getElementById('taskInput').value='';document.getElementById('taskTime').value=''}
+function addTask(){
+  const title=document.getElementById('taskInput').value.trim();
+  if(!title)return;
+  if(!tasks[selectedDay])tasks[selectedDay]=[];
+  tasks[selectedDay].push({id:nextId++,title,time:document.getElementById('taskTime').value,cat:document.getElementById('taskCat').value,priority:document.getElementById('taskPriority').value,done:false});
+  saveTasks(tasks);
+  closeSheet();
+  renderTasks();
+  buildDays();
+}
+document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeSheet()});
+if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.ready();window.Telegram.WebApp.expand()}
+buildDays();
+renderTasks();
+</script>
+</body>
+</html>
