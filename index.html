@@ -84,6 +84,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .field input,.field select{width:100%;border:none;border-radius:12px;padding:11px 14px;font-size:14px;background:var(--tg-theme-secondary-bg-color,#fff);color:var(--tg-theme-text-color,#000);font-family:inherit;outline:none}
 .field-row{display:flex;gap:8px}
 .field-row .field{flex:1}
+.repeat-days{display:none;gap:6px;flex-wrap:wrap;margin-top:6px}
+.repeat-days.open{display:flex}
+.repeat-day{border:none;border-radius:12px;padding:8px 10px;background:var(--tg-theme-secondary-bg-color,#fff);color:var(--tg-theme-text-color,#000);font-size:12px;cursor:pointer;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1)}
+.repeat-day.active{background:#2481cc;color:#fff;transform:scale(1.05)}
 .btn-save{width:100%;padding:14px;border:none;border-radius:14px;background:#2481cc;color:#fff;cursor:pointer;font-size:15px;font-weight:600;margin-top:4px;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1)}
 .btn-save:active{transform:scale(0.97)}
 .btn-cancel{width:100%;padding:11px;border:none;border-radius:14px;background:transparent;color:#8e8e93;cursor:pointer;font-size:14px;margin-top:4px}
@@ -165,6 +169,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="sheet-handle"></div>
     <div class="sheet-title">Новая задача</div>
     <div class="field"><label>Название</label><input type="text" id="taskInput" placeholder="Что нужно сделать?"></div>
+    <div class="field"><label>Повтор</label>
+      <select id="taskRepeat" onchange="toggleRepeatControls()">
+        <option value="once">Один раз</option>
+        <option value="weekly">Повторять каждую неделю</option>
+      </select>
+      <div class="repeat-days" id="repeatDays">
+        <button type="button" class="repeat-day" data-day="1" onclick="toggleRepeatDay(this,1)">Пн</button>
+        <button type="button" class="repeat-day" data-day="2" onclick="toggleRepeatDay(this,2)">Вт</button>
+        <button type="button" class="repeat-day" data-day="3" onclick="toggleRepeatDay(this,3)">Ср</button>
+        <button type="button" class="repeat-day" data-day="4" onclick="toggleRepeatDay(this,4)">Чт</button>
+        <button type="button" class="repeat-day" data-day="5" onclick="toggleRepeatDay(this,5)">Пт</button>
+        <button type="button" class="repeat-day" data-day="6" onclick="toggleRepeatDay(this,6)">Сб</button>
+        <button type="button" class="repeat-day" data-day="0" onclick="toggleRepeatDay(this,0)">Вс</button>
+      </div>
+    </div>
     <div class="field-row">
       <div class="field"><label>Время</label><input type="time" id="taskTime"></div>
       <div class="field"><label>Категория</label>
@@ -216,12 +235,31 @@ const today=new Date();
 const todayIdx=today.getDay();
 let selectedDay=todayIdx;
 let filterCat='all';
-let nextId=100;
 let selectedEmoji='💊';
 let currentTab='planner';
+let selectedRepeatDays=[];
 function load(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
-let tasks=load('planner_tasks')||{};
+function makeId(prefix){return prefix+Date.now()+Math.floor(Math.random()*10000)}
+function dateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function dateForDay(day){
+  const d=new Date(today);
+  d.setDate(today.getDate()-todayIdx+day);
+  return d;
+}
+function selectedDateKey(){return dateKey(dateForDay(selectedDay))}
+let tasks=load('planner_tasks_by_date');
+let recurringTasks=load('planner_recurring_tasks')||[];
+let recurringDone=load('planner_recurring_done')||{};
+if(!tasks){
+  tasks={};
+  const oldTasks=load('planner_tasks')||{};
+  Object.keys(oldTasks).forEach(day=>{
+    const key=dateKey(dateForDay(Number(day)));
+    tasks[key]=(oldTasks[day]||[]).map(t=>({...t,id:t.id||makeId('t'),done:!!t.done}));
+  });
+  save('planner_tasks_by_date',tasks);
+}
 let vitamins=load('planner_vitamins')||[];
 let vitTaken=load('planner_vitTaken')||{};
 function switchTab(tab){
@@ -238,9 +276,8 @@ function buildDays(){
   const nav=document.getElementById('daysNav');
   nav.innerHTML='';
   for(let i=0;i<7;i++){
-    const d=new Date(today);
-    d.setDate(today.getDate()-todayIdx+i);
-    const hasTasks=(tasks[i]||[]).length>0;
+    const d=dateForDay(i);
+    const hasTasks=getTasksForDay(i).length>0;
     const btn=document.createElement('button');
     btn.className='day-chip'+(i===todayIdx?' today':'')+(i===selectedDay?' active':'');
     btn.innerHTML=`<span class="dn">${DAYS[i]}</span><span class="dd">${d.getDate()}</span>${hasTasks?'<span class="dot"></span>':'<span style="height:6px"></span>'}`;
@@ -248,31 +285,82 @@ function buildDays(){
     nav.appendChild(btn);
   }
 }
+function getTasksForDay(day){
+  const key=dateKey(dateForDay(day));
+  const oneTime=(tasks[key]||[]).map(t=>({...t,viewId:'t-'+t.id,recurring:false}));
+  const repeated=recurringTasks
+    .filter(t=>(t.days||[]).includes(day))
+    .map(t=>({...t,viewId:'r-'+t.id,recurring:true,done:!!(recurringDone[key]&&recurringDone[key][t.id])}));
+  return oneTime.concat(repeated);
+}
+function taskCatLabel(cat){return cat==='work'?'💼 Работа':cat==='train'?'🏋️ Тренировка':'🏠 Дела'}
 function renderTasks(){
   const list=document.getElementById('tasksList');
-  let dt=(tasks[selectedDay]||[]).filter(t=>filterCat==='all'||t.cat===filterCat);
+  const all=getTasksForDay(selectedDay);
+  let dt=all.filter(t=>filterCat==='all'||t.cat===filterCat);
   dt=dt.sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-  const all=tasks[selectedDay]||[];
   const done=all.filter(t=>t.done).length;
   const pct=all.length?Math.round(done/all.length*100):0;
   document.getElementById('progressFill').style.width=pct+'%';
   document.getElementById('statsRow').innerHTML=`<div class="stat"><div class="stat-n">${all.length}</div><div class="stat-l">задач</div></div><div class="stat"><div class="stat-n">${done}</div><div class="stat-l">готово</div></div><div class="stat"><div class="stat-n">${pct}%</div><div class="stat-l">прогресс</div></div>`;
   if(!dt.length){list.innerHTML='<div class="empty">Нет задач на этот день<br>Нажми + чтобы добавить</div>';return}
-  list.innerHTML=dt.map((t,i)=>`<div class="task-card ${t.done?'done':''}" style="animation-delay:${i*0.05}s" id="card-${t.id}"><div class="check ${t.done?'checked':''}" onclick="toggle(${t.id})">${t.done?'✓':''}</div><div class="task-body"><div class="task-title">${t.title}</div><div class="task-meta">${t.time?`<span class="task-time">⏰ ${t.time}</span>`:''}<span class="cat-badge ${t.cat}">${t.cat==='work'?'💼 Работа':t.cat==='train'?'🏋️ Тренировка':'🏠 Дела'}</span></div></div><div class="priority-dot ${t.priority}"></div></div>`).join('');
+  list.innerHTML=dt.map((t,i)=>`<div class="task-card ${t.done?'done':''}" style="animation-delay:${i*0.05}s" id="card-${t.viewId}"><div class="check ${t.done?'checked':''}" onclick="toggle('${t.viewId}')">${t.done?'✓':''}</div><div class="task-body"><div class="task-title">${t.title}</div><div class="task-meta">${t.time?`<span class="task-time">⏰ ${t.time}</span>`:''}<span class="cat-badge ${t.cat}">${taskCatLabel(t.cat)}</span>${t.recurring?'<span class="task-time">↻ повтор</span>':''}</div></div><div class="priority-dot ${t.priority}"></div></div>`).join('');
 }
-function toggle(id){const arr=tasks[selectedDay]||[];const t=arr.find(x=>x.id===id);if(t){t.done=!t.done;save('planner_tasks',tasks);renderTasks();buildDays()}}
+function toggle(viewId){
+  const key=selectedDateKey();
+  const type=viewId.slice(0,1);
+  const id=viewId.slice(2);
+  if(type==='r'){
+    if(!recurringDone[key])recurringDone[key]={};
+    recurringDone[key][id]=!recurringDone[key][id];
+    save('planner_recurring_done',recurringDone);
+  }else{
+    const arr=tasks[key]||[];
+    const t=arr.find(x=>String(x.id)===id);
+    if(t){t.done=!t.done;save('planner_tasks_by_date',tasks)}
+  }
+  renderTasks();buildDays();
+}
 function setFilter(cat,btn){filterCat=cat;document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));btn.classList.add('active');renderTasks()}
-function openSheet(){document.getElementById('overlay').classList.add('open');setTimeout(()=>document.getElementById('taskInput').focus(),300)}
-function closeSheet(){document.getElementById('overlay').classList.remove('open');document.getElementById('taskInput').value='';document.getElementById('taskTime').value=''}
+function openSheet(){selectedRepeatDays=[selectedDay];syncRepeatButtons();document.getElementById('overlay').classList.add('open');setTimeout(()=>document.getElementById('taskInput').focus(),300)}
+function closeSheet(){
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('taskInput').value='';
+  document.getElementById('taskTime').value='';
+  document.getElementById('taskRepeat').value='once';
+  selectedRepeatDays=[];
+  syncRepeatButtons();
+  toggleRepeatControls();
+}
+function toggleRepeatControls(){document.getElementById('repeatDays').classList.toggle('open',document.getElementById('taskRepeat').value==='weekly')}
+function toggleRepeatDay(btn,day){
+  selectedRepeatDays=selectedRepeatDays.includes(day)?selectedRepeatDays.filter(d=>d!==day):selectedRepeatDays.concat(day);
+  syncRepeatButtons();
+}
+function syncRepeatButtons(){
+  document.querySelectorAll('.repeat-day').forEach(btn=>{
+    const day=Number(btn.dataset.day);
+    btn.classList.toggle('active',selectedRepeatDays.includes(day));
+  });
+}
 function addTask(){
   const title=document.getElementById('taskInput').value.trim();
   if(!title)return;
-  if(!tasks[selectedDay])tasks[selectedDay]=[];
-  tasks[selectedDay].push({id:nextId++,title,time:document.getElementById('taskTime').value,cat:document.getElementById('taskCat').value,priority:document.getElementById('taskPriority').value,done:false});
-  save('planner_tasks',tasks);closeSheet();renderTasks();buildDays();
+  const base={title,time:document.getElementById('taskTime').value,cat:document.getElementById('taskCat').value,priority:document.getElementById('taskPriority').value};
+  if(document.getElementById('taskRepeat').value==='weekly'){
+    const days=selectedRepeatDays.length?selectedRepeatDays:[selectedDay];
+    recurringTasks.push({...base,id:makeId('r'),days});
+    save('planner_recurring_tasks',recurringTasks);
+  }else{
+    const key=selectedDateKey();
+    if(!tasks[key])tasks[key]=[];
+    tasks[key].push({...base,id:makeId('t'),done:false});
+    save('planner_tasks_by_date',tasks);
+  }
+  closeSheet();renderTasks();buildDays();
 }
 document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeSheet()});
-function getTodayKey(){const d=new Date();return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`}
+function getTodayKey(){return dateKey(new Date())}
 function renderVitamins(){
   const todayKey=getTodayKey();
   if(!vitTaken[todayKey])vitTaken[todayKey]={};
