@@ -6,266 +6,594 @@
 <title>Мой планировщик</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
+:root{
+  --bg:#101114;
+  --panel:#17191f;
+  --panel-2:#1f222a;
+  --panel-3:#252934;
+  --line:rgba(255,255,255,.08);
+  --line-strong:rgba(255,255,255,.14);
+  --text:#f4f6f8;
+  --muted:#8f96a3;
+  --soft:#c4c9d1;
+  --blue:#4da3ff;
+  --green:#4bd18a;
+  --amber:#f4bd50;
+  --red:#ff6a5f;
+  --violet:#a78bfa;
+  --shadow:0 18px 45px rgba(0,0,0,.28);
+  --radius:18px;
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-button,input,select{font-family:inherit}
-button{touch-action:manipulation}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--tg-theme-bg-color,#f2f2f7);color:var(--tg-theme-text-color,#000);max-width:480px;margin:0 auto;overflow-x:hidden}
-@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+button,input{font-family:inherit}
+button{border:0;cursor:pointer;touch-action:manipulation}
+button:focus,input:focus{outline:none}
+html,body{min-height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  max-width:480px;
+  margin:0 auto;
+  overflow-x:hidden;
+}
+@keyframes pageIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes rowIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes sheetIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes scaleIn{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
-@keyframes checkPop{0%{transform:scale(1)}40%{transform:scale(1.3)}70%{transform:scale(0.9)}100%{transform:scale(1)}}
-@keyframes pill-pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
-@keyframes fabFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-@keyframes fabRing{0%{opacity:.32;transform:scale(.9)}70%,100%{opacity:0;transform:scale(1.35)}}
-@keyframes dotPulse{0%,100%{transform:scale(1);opacity:.72}50%{transform:scale(1.55);opacity:1}}
-@keyframes progressGlow{0%{filter:saturate(1)}50%{filter:saturate(1.35) brightness(1.05)}100%{filter:saturate(1)}}
-@keyframes toastIn{0%{opacity:0;transform:translate(-50%,12px) scale(.96)}18%,82%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,10px) scale(.98)}}
-@keyframes confettiBurst{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(var(--r))}}
-@keyframes emptyWave{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-.tabbar{background:var(--tg-theme-secondary-bg-color,#fff);background:color-mix(in srgb,var(--tg-theme-secondary-bg-color,#fff) 94%,transparent);border-top:0.5px solid rgba(0,0,0,0.12);display:flex;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:100;padding-bottom:env(safe-area-inset-bottom);backdrop-filter:blur(18px)}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 0 6px;cursor:pointer;transition:all 0.2s;position:relative}
-.tab-icon{font-size:22px;margin-bottom:2px;transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1)}
-.tab-label{font-size:10px;color:#8e8e93;transition:color 0.2s}
-.tab.active:before{content:'';width:28px;height:3px;border-radius:99px;background:#2481cc;position:absolute;top:0}
-.tab.active .tab-icon{transform:scale(1.12) translateY(-1px)}
-.tab.active .tab-label{color:#2481cc;font-weight:500}
-.page{display:none;padding-bottom:80px;animation:scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes pressPop{0%{transform:scale(1)}45%{transform:scale(.92)}100%{transform:scale(1)}}
+@keyframes toastIn{0%{opacity:0;transform:translate(-50%,12px)}18%,82%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,10px)}}
+@keyframes confetti{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(var(--r))}}
+@keyframes pulseDot{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:1;transform:scale(1.45)}}
+.app{min-height:100vh;padding-bottom:86px;background:linear-gradient(180deg,#121318 0%,#101114 46%,#0d0e11 100%)}
+.page{display:none;animation:pageIn .26s ease both}
 .page.active{display:block}
-.header{background:var(--tg-theme-secondary-bg-color,#fff);background:color-mix(in srgb,var(--tg-theme-secondary-bg-color,#fff) 94%,transparent);padding:12px 16px 8px;position:sticky;top:0;z-index:10;backdrop-filter:blur(18px);box-shadow:0 10px 28px rgba(0,0,0,0.04)}
-.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.app-title{font-size:17px;font-weight:600}
-.days-nav{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
-.days-nav::-webkit-scrollbar{display:none}
-.day-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:5px 10px;border-radius:12px;cursor:pointer;border:none;background:transparent;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);position:relative;overflow:hidden}
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:20;
+  padding:16px 16px 10px;
+  background:rgba(16,17,20,.86);
+  border-bottom:1px solid var(--line);
+  backdrop-filter:blur(20px);
+}
+.title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.eyebrow{font-size:12px;line-height:1.2;color:var(--muted);font-weight:600}
+h1{font-size:25px;line-height:1.15;font-weight:750;letter-spacing:0}
+.ghost-btn{
+  height:34px;
+  padding:0 12px;
+  border-radius:999px;
+  background:var(--panel-2);
+  color:var(--soft);
+  border:1px solid var(--line);
+  font-size:13px;
+  font-weight:650;
+  transition:transform .18s ease,background .18s ease,border-color .18s ease;
+}
+.ghost-btn:active{transform:scale(.95);background:var(--panel-3)}
+.week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day-chip{
+  min-width:0;
+  height:62px;
+  border-radius:16px;
+  background:transparent;
+  color:var(--muted);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  transition:transform .18s ease,background .18s ease,color .18s ease,box-shadow .18s ease;
+  position:relative;
+}
 .day-chip:active{transform:scale(.94)}
-.day-chip.active{background:#2481cc;transform:scale(1.05);box-shadow:0 8px 18px rgba(36,129,204,.28)}
-.day-chip .dn{font-size:10px;color:#8e8e93;transition:color 0.2s}
-.day-chip.active .dn{color:#fff}
-.day-chip .dd{font-size:15px;font-weight:600;color:var(--tg-theme-text-color,#000);transition:color 0.2s}
-.day-chip.active .dd{color:#fff}
-.day-chip.today .dd{color:#2481cc}
-.day-chip.active.today .dd{color:#fff}
-.day-chip .dot{width:4px;height:4px;border-radius:50%;background:#2481cc;margin-top:2px;transition:background 0.2s;animation:dotPulse 1.8s ease-in-out infinite}
-.day-chip.active .dot{background:rgba(255,255,255,0.7)}
-.filter-bar{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none;background:var(--tg-theme-secondary-bg-color,#fff);background:color-mix(in srgb,var(--tg-theme-secondary-bg-color,#fff) 94%,transparent);border-bottom:0.5px solid rgba(0,0,0,0.07);backdrop-filter:blur(18px)}
-.filter-bar::-webkit-scrollbar{display:none}
-.cat-pill{flex-shrink:0;font-size:12px;padding:5px 11px;border-radius:20px;border:1px solid rgba(0,0,0,0.12);cursor:pointer;background:transparent;color:#666;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1)}
-.cat-pill:active{transform:scale(.93)}
-.cat-pill.active{color:#fff;border-color:transparent;transform:scale(1.05)}
-.cat-pill.active.c-all{background:#2481cc;box-shadow:0 8px 18px rgba(36,129,204,.22)}
-.cat-pill.active.c-work{background:#5a3fb5;box-shadow:0 8px 18px rgba(90,63,181,.22)}
-.cat-pill.active.c-train{background:#1d9e75;box-shadow:0 8px 18px rgba(29,158,117,.22)}
-.cat-pill.active.c-life{background:#d85a30;box-shadow:0 8px 18px rgba(216,90,48,.2)}
-.stats{display:flex;gap:8px;padding:10px 12px 0}
-.stat{flex:1;background:var(--tg-theme-secondary-bg-color,#fff);border-radius:12px;padding:9px;text-align:center;transition:transform 0.2s,box-shadow .2s;box-shadow:0 6px 20px rgba(0,0,0,.035)}
-.stat:active{transform:scale(0.95)}
-.stat-n{font-size:20px;font-weight:600}
-.stat-l{font-size:10px;color:#8e8e93;margin-top:1px}
-.progress-wrap{padding:8px 12px}
-.progress-bar{height:5px;background:rgba(0,0,0,0.08);border-radius:99px;overflow:hidden}
-.progress-fill{height:100%;background:linear-gradient(90deg,#1d9e75,#34c77b,#2481cc);border-radius:99px;transition:width 0.55s cubic-bezier(0.34,1.56,0.64,1);animation:progressGlow 2.4s ease-in-out infinite}
-.tasks-list{padding:8px 12px;display:flex;flex-direction:column;gap:8px}
-.task-card{background:var(--tg-theme-secondary-bg-color,#fff);border-radius:14px;padding:12px 12px 12px 14px;display:flex;align-items:flex-start;gap:10px;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1),box-shadow .25s,opacity .25s;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.045)}
-.task-card:before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 99px 99px 0;background:#2481cc}
-.task-card.work:before{background:#5a3fb5}
-.task-card.train:before{background:#1d9e75}
-.task-card.life:before{background:#d85a30}
-.task-card:active{transform:scale(0.98)}
-.task-card.done{opacity:0.58}
-.check{width:26px;height:26px;border-radius:50%;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;cursor:pointer;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);font-size:13px;color:#fff;background:transparent}
-.check:active{transform:scale(.86)}
-.check.checked{background:#1d9e75;border-color:#1d9e75;animation:checkPop 0.4s cubic-bezier(0.34,1.56,0.64,1)}
-.task-body{flex:1;min-width:0}
-.task-title{font-size:14px;font-weight:500;line-height:1.4;transition:all 0.3s}
-.task-card.done .task-title{text-decoration:line-through;color:#999}
-.task-meta{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
-.task-time{font-size:12px;color:#8e8e93}
-.cat-badge{font-size:11px;padding:2px 7px;border-radius:10px}
-.cat-badge.work{background:#EEEDFE;color:#3C3489}
-.cat-badge.train{background:#E1F5EE;color:#085041}
-.cat-badge.life{background:#FAECE7;color:#4A1B0C}
-.repeat-badge{font-size:11px;padding:2px 7px;border-radius:10px;background:rgba(36,129,204,.12);color:#2481cc}
-.task-actions{display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;margin-left:2px}
-.priority-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
-.priority-dot.high{background:#E24B4A}
-.priority-dot.mid{background:#EF9F27}
-.priority-dot.low{background:#97C459}
-.task-delete{width:28px;height:28px;border:none;border-radius:50%;background:rgba(255,59,48,.1);color:#ff3b30;font-size:17px;line-height:1;cursor:pointer;transition:all .2s cubic-bezier(0.34,1.56,0.64,1)}
-.task-delete:active{transform:scale(.86) rotate(8deg);background:rgba(255,59,48,.18)}
-.empty{text-align:center;padding:50px 20px;color:#aaa;font-size:14px;animation:fadeIn 0.3s ease}
-.empty:before{content:'+';width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;background:rgba(36,129,204,.12);color:#2481cc;font-size:24px;animation:emptyWave 2s ease-in-out infinite}
-.fab{position:fixed;bottom:calc(60px + env(safe-area-inset-bottom));right:20px;background:#2481cc;color:#fff;border:none;border-radius:50%;width:56px;height:56px;font-size:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(36,129,204,0.42);z-index:20;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);animation:fabFloat 3.2s ease-in-out infinite}
-.fab:before{content:'';position:absolute;inset:0;border-radius:50%;background:#2481cc;z-index:-1;animation:fabRing 2.6s ease-out infinite}
-.fab:active{transform:scale(0.9) rotate(45deg)}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:flex-end;backdrop-filter:blur(2px)}
-.overlay.open{display:flex;animation:fadeIn 0.2s ease}
-.sheet{background:var(--tg-theme-bg-color,#f2f2f7);border-radius:20px 20px 0 0;width:100%;padding:20px 16px calc(36px + env(safe-area-inset-bottom));max-height:90vh;overflow-y:auto;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 -18px 42px rgba(0,0,0,.2)}
-.sheet-handle{width:36px;height:4px;background:rgba(0,0,0,0.15);border-radius:2px;margin:0 auto 16px}
-.sheet-title{font-size:16px;font-weight:600;margin-bottom:16px;text-align:center}
-.field{margin-bottom:12px}
-.field label{font-size:12px;color:#8e8e93;margin-bottom:4px;display:block}
-.field input,.field select{width:100%;border:none;border-radius:12px;padding:11px 14px;font-size:14px;background:var(--tg-theme-secondary-bg-color,#fff);color:var(--tg-theme-text-color,#000);font-family:inherit;outline:none;box-shadow:0 1px 0 rgba(0,0,0,.03);transition:box-shadow .2s,transform .2s}
-.field input:focus,.field select:focus{box-shadow:0 0 0 3px rgba(36,129,204,.16);transform:translateY(-1px)}
-.field-row{display:flex;gap:8px}
-.field-row .field{flex:1}
-.repeat-days{display:none;gap:6px;flex-wrap:wrap;margin-top:6px}
-.repeat-days.open{display:flex;animation:fadeIn .18s ease}
-.repeat-day{border:none;border-radius:12px;padding:8px 10px;background:var(--tg-theme-secondary-bg-color,#fff);color:var(--tg-theme-text-color,#000);font-size:12px;cursor:pointer;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 4px 14px rgba(0,0,0,.035)}
-.repeat-day:active{transform:scale(.9)}
-.repeat-day.active{background:#2481cc;color:#fff;transform:scale(1.05);box-shadow:0 8px 18px rgba(36,129,204,.24)}
-.btn-save{width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#2481cc,#1d9e75);color:#fff;cursor:pointer;font-size:15px;font-weight:600;margin-top:4px;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 10px 24px rgba(36,129,204,.24)}
-.btn-save:active{transform:scale(0.97);box-shadow:0 5px 14px rgba(36,129,204,.22)}
-.btn-cancel{width:100%;padding:11px;border:none;border-radius:14px;background:transparent;color:#8e8e93;cursor:pointer;font-size:14px;margin-top:4px}
-.vit-header{background:var(--tg-theme-secondary-bg-color,#fff);background:color-mix(in srgb,var(--tg-theme-secondary-bg-color,#fff) 94%,transparent);padding:14px 16px;position:sticky;top:0;z-index:10;backdrop-filter:blur(18px);box-shadow:0 10px 28px rgba(0,0,0,0.04)}
-.vit-header-top{display:flex;align-items:center;justify-content:space-between}
-.vit-title{font-size:17px;font-weight:600}
-.vit-add-btn{background:#2481cc;color:#fff;border:none;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 8px 18px rgba(36,129,204,.22)}
-.vit-add-btn:active{transform:scale(0.95)}
-.vit-date{font-size:13px;color:#8e8e93;margin-top:2px}
-.vit-summary{display:flex;gap:8px;padding:10px 12px}
-.vit-stat{flex:1;background:var(--tg-theme-secondary-bg-color,#fff);border-radius:12px;padding:10px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.035)}
-.vit-stat-n{font-size:22px;font-weight:600}
-.vit-stat-l{font-size:10px;color:#8e8e93;margin-top:1px}
-.vit-progress-wrap{padding:0 12px 8px}
-.vit-progress-bar{height:6px;background:rgba(0,0,0,0.08);border-radius:3px;overflow:hidden}
-.vit-progress-fill{height:100%;background:linear-gradient(90deg,#ff9500,#ffcc00);border-radius:3px;transition:width 0.5s cubic-bezier(0.34,1.56,0.64,1)}
-.vit-list{padding:8px 12px;display:flex;flex-direction:column;gap:8px}
-.vit-card{background:var(--tg-theme-secondary-bg-color,#fff);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both;transition:all 0.2s;box-shadow:0 8px 24px rgba(0,0,0,.045)}
-.vit-card:active{transform:scale(0.98)}
-.vit-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1)}
-.vit-icon.taken{animation:pill-pop 0.4s cubic-bezier(0.34,1.56,0.64,1)}
-.vit-info{flex:1}
-.vit-name{font-size:14px;font-weight:500}
-.vit-dose{font-size:12px;color:#8e8e93;margin-top:2px}
-.vit-toggle{position:relative;width:50px;height:28px;flex-shrink:0}
-.vit-toggle input{opacity:0;width:0;height:0;position:absolute}
-.vit-toggle-track{width:50px;height:28px;background:#e5e5ea;border-radius:14px;cursor:pointer;transition:background 0.3s cubic-bezier(0.34,1.56,0.64,1);display:block}
-.vit-toggle input:checked+.vit-toggle-track{background:#34c759}
-.vit-toggle-thumb{position:absolute;top:2px;left:2px;width:24px;height:24px;background:#fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none}
-.vit-toggle input:checked~.vit-toggle-thumb{transform:translateX(22px)}
-.vit-delete{width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,59,48,.1);color:#ff3b30;font-size:18px;cursor:pointer;padding:0;opacity:0.85;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1)}
-.vit-delete:active{opacity:1;transform:scale(.86) rotate(8deg)}
-.vit-empty{text-align:center;padding:50px 20px;color:#aaa;font-size:14px;animation:fadeIn 0.3s ease}
-.section-label{font-size:13px;font-weight:500;color:#8e8e93;padding:12px 16px 4px;text-transform:uppercase;letter-spacing:0.5px}
-#emojiPicker span{background:var(--tg-theme-secondary-bg-color,#fff);box-shadow:0 4px 14px rgba(0,0,0,.035)}
-.toast{position:fixed;left:50%;bottom:calc(134px + env(safe-area-inset-bottom));z-index:260;background:rgba(24,32,42,.92);color:#fff;border-radius:999px;padding:9px 14px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.18)}
-.toast.show{animation:toastIn 1.6s ease both}
-.confetti-layer{position:fixed;inset:0;pointer-events:none;z-index:255;overflow:hidden}
-.confetti-piece{position:absolute;width:6px;height:10px;border-radius:3px;animation:confettiBurst .9s ease-out forwards}
+.day-chip.active{background:var(--panel-2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line-strong)}
+.day-chip.today:not(.active){color:var(--blue)}
+.day-name{font-size:11px;font-weight:700}
+.day-num{font-size:18px;font-weight:760}
+.day-dot{width:5px;height:5px;border-radius:50%;background:var(--blue);opacity:0}
+.day-chip.has-items .day-dot{opacity:1;animation:pulseDot 1.9s ease-in-out infinite}
+.content{padding:14px 14px 0}
+.overview{
+  display:grid;
+  grid-template-columns:76px minmax(0,1fr);
+  gap:14px;
+  align-items:center;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:22px;
+  padding:14px;
+  box-shadow:var(--shadow);
+}
+.donut{
+  --progress:0deg;
+  width:76px;
+  height:76px;
+  border-radius:50%;
+  background:conic-gradient(var(--green) var(--progress),var(--panel-3) 0);
+  display:grid;
+  place-items:center;
+  position:relative;
+}
+.donut:after{content:"";position:absolute;inset:8px;border-radius:50%;background:var(--panel)}
+.donut span{position:relative;z-index:1;font-size:18px;font-weight:800}
+.overview-title{font-size:17px;font-weight:760;margin-bottom:5px}
+.overview-meta{font-size:13px;color:var(--muted);line-height:1.35}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.stat{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:10px 8px;
+}
+.stat-value{font-size:20px;font-weight:800}
+.stat-label{font-size:11px;color:var(--muted);margin-top:2px}
+.filters{
+  margin:14px 0 12px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:4px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:4px;
+}
+.filter-btn{
+  min-width:0;
+  height:36px;
+  border-radius:12px;
+  background:transparent;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+  transition:transform .18s ease,background .18s ease,color .18s ease;
+}
+.filter-btn:active{transform:scale(.94)}
+.filter-btn.active{background:var(--panel-3);color:var(--text)}
+.list{display:flex;flex-direction:column;gap:9px}
+.task-row{
+  position:relative;
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr) 34px;
+  gap:10px;
+  align-items:center;
+  min-height:74px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:11px 10px 11px 12px;
+  box-shadow:0 12px 30px rgba(0,0,0,.16);
+  animation:rowIn .28s ease both;
+  transition:transform .18s ease,border-color .18s ease,background .18s ease,opacity .18s ease;
+  overflow:hidden;
+}
+.task-row:active{transform:scale(.985)}
+.task-row.done{opacity:.58}
+.task-row:before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 99px 99px 0;background:var(--blue)}
+.task-row.work:before{background:var(--violet)}
+.task-row.train:before{background:var(--green)}
+.task-row.life:before{background:var(--amber)}
+.check{
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  background:transparent;
+  border:1.6px solid var(--line-strong);
+  color:#fff;
+  display:grid;
+  place-items:center;
+  font-size:15px;
+  transition:transform .18s ease,background .18s ease,border-color .18s ease;
+}
+.check:active{animation:pressPop .22s ease}
+.check.checked{background:var(--green);border-color:var(--green)}
+.task-title{
+  font-size:15px;
+  line-height:1.28;
+  font-weight:720;
+  overflow-wrap:anywhere;
+}
+.task-row.done .task-title{text-decoration:line-through;color:var(--muted)}
+.task-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}
+.pill{
+  min-height:22px;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  border-radius:999px;
+  padding:3px 8px;
+  background:var(--panel-2);
+  color:var(--soft);
+  font-size:11px;
+  font-weight:700;
+  border:1px solid var(--line);
+}
+.pill.work{color:#d9ccff}
+.pill.train{color:#baf4d2}
+.pill.life{color:#f6db9c}
+.priority{width:8px;height:8px;border-radius:50%;display:inline-block}
+.priority.high{background:var(--red)}
+.priority.mid{background:var(--amber)}
+.priority.low{background:var(--green)}
+.icon-btn{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:transparent;
+  color:var(--muted);
+  font-size:20px;
+  display:grid;
+  place-items:center;
+  transition:transform .18s ease,background .18s ease,color .18s ease;
+}
+.icon-btn:active{transform:scale(.9);background:rgba(255,255,255,.06)}
+.icon-btn.delete:active{color:var(--red);background:rgba(255,106,95,.12)}
+.empty{
+  border:1px dashed var(--line-strong);
+  border-radius:22px;
+  padding:38px 18px;
+  text-align:center;
+  color:var(--muted);
+  background:rgba(255,255,255,.02);
+  animation:fadeIn .25s ease both;
+}
+.empty-title{font-size:16px;color:var(--soft);font-weight:760;margin-bottom:4px}
+.fab{
+  position:fixed;
+  right:18px;
+  bottom:calc(82px + env(safe-area-inset-bottom));
+  z-index:40;
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  background:var(--blue);
+  color:#06111f;
+  font-size:32px;
+  font-weight:500;
+  box-shadow:0 16px 34px rgba(77,163,255,.32);
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.fab:active{transform:scale(.92) rotate(45deg);box-shadow:0 9px 24px rgba(77,163,255,.26)}
+.bottom-nav{
+  position:fixed;
+  left:50%;
+  bottom:0;
+  z-index:35;
+  transform:translateX(-50%);
+  width:100%;
+  max-width:480px;
+  padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px;
+  background:rgba(16,17,20,.88);
+  border-top:1px solid var(--line);
+  backdrop-filter:blur(20px);
+}
+.nav-btn{
+  height:50px;
+  border-radius:16px;
+  color:var(--muted);
+  background:transparent;
+  font-size:12px;
+  font-weight:750;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:transform .18s ease,background .18s ease,color .18s ease;
+}
+.nav-btn:active{transform:scale(.96)}
+.nav-btn.active{background:var(--panel-2);color:var(--text)}
+.nav-icon{font-size:17px}
+.vit-toolbar{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:12px;
+  align-items:center;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:22px;
+  padding:14px;
+  box-shadow:var(--shadow);
+}
+.vit-count{font-size:32px;font-weight:850;line-height:1}
+.vit-caption{font-size:12px;color:var(--muted);margin-top:3px}
+.vit-progress{
+  height:8px;
+  border-radius:99px;
+  background:var(--panel-3);
+  margin-top:12px;
+  overflow:hidden;
+}
+.vit-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--green));border-radius:99px;transition:width .35s ease}
+.vit-row{
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr) 58px 34px;
+  gap:10px;
+  align-items:center;
+  min-height:74px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:10px;
+  animation:rowIn .28s ease both;
+}
+.vit-icon{
+  width:42px;
+  height:42px;
+  border-radius:15px;
+  background:var(--panel-2);
+  display:grid;
+  place-items:center;
+  font-size:21px;
+}
+.vit-name{font-size:15px;font-weight:740;overflow-wrap:anywhere}
+.vit-dose{font-size:12px;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
+.vit-row.taken .vit-name{text-decoration:line-through;color:var(--muted)}
+.switch{position:relative;width:52px;height:30px;display:block}
+.switch input{position:absolute;opacity:0;width:0;height:0}
+.switch-track{position:absolute;inset:0;border-radius:999px;background:var(--panel-3);border:1px solid var(--line);transition:background .22s ease}
+.switch-thumb{position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .22s cubic-bezier(.34,1.56,.64,1)}
+.switch input:checked+.switch-track{background:var(--green)}
+.switch input:checked~.switch-thumb{transform:translateX(22px)}
+.overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:90;
+  align-items:flex-end;
+  background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);
+}
+.overlay.open{display:flex;animation:fadeIn .18s ease both}
+.sheet{
+  width:100%;
+  max-height:91vh;
+  overflow-y:auto;
+  background:#14161b;
+  border-radius:26px 26px 0 0;
+  border:1px solid var(--line);
+  border-bottom:0;
+  padding:10px 16px calc(24px + env(safe-area-inset-bottom));
+  box-shadow:0 -24px 58px rgba(0,0,0,.48);
+  animation:sheetIn .28s cubic-bezier(.2,.9,.2,1) both;
+}
+.sheet-handle{width:42px;height:4px;border-radius:99px;background:var(--panel-3);margin:0 auto 18px}
+.sheet-title{font-size:20px;font-weight:800;margin-bottom:16px}
+.field{margin-bottom:14px}
+.label{display:block;font-size:12px;color:var(--muted);font-weight:750;margin-bottom:7px}
+.input{
+  width:100%;
+  height:48px;
+  border-radius:16px;
+  border:1px solid var(--line);
+  background:var(--panel);
+  color:var(--text);
+  outline:none;
+  padding:0 14px;
+  font-size:15px;
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.input:focus{border-color:rgba(77,163,255,.58);box-shadow:0 0 0 4px rgba(77,163,255,.12);background:var(--panel-2)}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choice-row,.weekday-row,.emoji-row{display:flex;gap:8px;flex-wrap:wrap}
+.choice{
+  height:38px;
+  padding:0 12px;
+  border-radius:13px;
+  color:var(--muted);
+  background:var(--panel);
+  border:1px solid var(--line);
+  font-size:13px;
+  font-weight:750;
+  transition:transform .18s ease,background .18s ease,color .18s ease,border-color .18s ease;
+}
+.choice:active{transform:scale(.94)}
+.choice.active{background:var(--panel-3);color:var(--text);border-color:var(--line-strong)}
+.weekday-row{display:none;margin-top:10px}
+.weekday-row.open{display:flex;animation:fadeIn .18s ease both}
+.weekday{width:42px;height:38px;border-radius:13px;background:var(--panel);border:1px solid var(--line);color:var(--muted);font-size:13px;font-weight:780;transition:transform .18s ease,background .18s ease,color .18s ease}
+.weekday.active{background:var(--blue);color:#07111f;border-color:transparent}
+.weekday:active{transform:scale(.92)}
+.emoji-choice{width:42px;height:42px;border-radius:14px;background:var(--panel);border:1px solid var(--line);font-size:21px;transition:transform .18s ease,background .18s ease,border-color .18s ease}
+.emoji-choice.active{background:var(--panel-3);border-color:var(--blue);transform:translateY(-1px)}
+.sheet-actions{display:grid;gap:10px;margin-top:18px}
+.primary{
+  height:50px;
+  border-radius:17px;
+  background:var(--blue);
+  color:#07111f;
+  font-size:15px;
+  font-weight:850;
+  box-shadow:0 14px 28px rgba(77,163,255,.24);
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.primary:active{transform:scale(.97);box-shadow:0 8px 18px rgba(77,163,255,.18)}
+.secondary{
+  height:44px;
+  border-radius:15px;
+  background:transparent;
+  color:var(--muted);
+  font-size:14px;
+  font-weight:700;
+}
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:calc(146px + env(safe-area-inset-bottom));
+  z-index:120;
+  transform:translateX(-50%);
+  background:rgba(244,246,248,.94);
+  color:#101114;
+  border-radius:999px;
+  padding:10px 14px;
+  font-size:13px;
+  font-weight:800;
+  box-shadow:0 12px 34px rgba(0,0,0,.28);
+  opacity:0;
+  pointer-events:none;
+}
+.toast.show{animation:toastIn 1.55s ease both}
+.confetti-layer{position:fixed;inset:0;z-index:110;pointer-events:none;overflow:hidden}
+.confetti-piece{position:absolute;left:50%;top:42%;width:6px;height:10px;border-radius:3px;animation:confetti .8s ease-out forwards}
 @media (prefers-reduced-motion:reduce){
   *,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
 }
 </style>
 </head>
 <body>
-<div class="page active" id="page-planner">
-  <div class="header">
-    <div class="header-top"><span class="app-title">📅 Планировщик</span></div>
-    <div class="days-nav" id="daysNav"></div>
-  </div>
-  <div class="filter-bar">
-    <button class="cat-pill active c-all" onclick="setFilter('all',this)">Все</button>
-    <button class="cat-pill c-work" onclick="setFilter('work',this)">💼 Работа</button>
-    <button class="cat-pill c-train" onclick="setFilter('train',this)">🏋️ Тренировки</button>
-    <button class="cat-pill c-life" onclick="setFilter('life',this)">🏠 Дела</button>
-  </div>
-  <div class="stats" id="statsRow"></div>
-  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div></div>
-  <div class="tasks-list" id="tasksList"></div>
+<div class="app">
+  <section class="page active" id="page-planner">
+    <header class="topbar">
+      <div class="title-row">
+        <div>
+          <div class="eyebrow" id="plannerDate"></div>
+          <h1>Планировщик</h1>
+        </div>
+        <button class="ghost-btn" onclick="jumpToday()">Сегодня</button>
+      </div>
+      <div class="week-strip" id="daysNav"></div>
+    </header>
+
+    <main class="content">
+      <section class="overview">
+        <div class="donut" id="progressDonut"><span id="progressText">0%</span></div>
+        <div>
+          <div class="overview-title" id="overviewTitle">Свободный день</div>
+          <div class="overview-meta" id="overviewMeta">Нет задач</div>
+        </div>
+      </section>
+      <div class="stat-row" id="statsRow"></div>
+      <div class="filters">
+        <button class="filter-btn active" onclick="setFilter('all',this)">Все</button>
+        <button class="filter-btn" onclick="setFilter('work',this)">Работа</button>
+        <button class="filter-btn" onclick="setFilter('train',this)">Зал</button>
+        <button class="filter-btn" onclick="setFilter('life',this)">Дела</button>
+      </div>
+      <div class="list" id="tasksList"></div>
+    </main>
+  </section>
+
+  <section class="page" id="page-vitamins">
+    <header class="topbar">
+      <div class="title-row">
+        <div>
+          <div class="eyebrow" id="vitDate"></div>
+          <h1>Витамины</h1>
+        </div>
+        <button class="ghost-btn" onclick="openVitSheet()">Добавить</button>
+      </div>
+    </header>
+    <main class="content">
+      <section class="vit-toolbar">
+        <div>
+          <div class="vit-count" id="vitCount">0/0</div>
+          <div class="vit-caption" id="vitCaption">На сегодня</div>
+          <div class="vit-progress"><span id="vitProgress"></span></div>
+        </div>
+      </section>
+      <div class="list" id="vitList" style="margin-top:12px"></div>
+    </main>
+  </section>
+
+  <button class="fab" id="mainFab" onclick="openSheet()" aria-label="Добавить">+</button>
+  <div class="confetti-layer" id="confettiLayer"></div>
+  <div class="toast" id="toast"></div>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="tab-planner" onclick="switchTab('planner')"><span class="nav-icon">▦</span>Расписание</button>
+    <button class="nav-btn" id="tab-vitamins" onclick="switchTab('vitamins')"><span class="nav-icon">●</span>Витамины</button>
+  </nav>
 </div>
-<div class="page" id="page-vitamins">
-  <div class="vit-header">
-    <div class="vit-header-top">
-      <span class="vit-title">💊 Витамины</span>
-      <button class="vit-add-btn" onclick="openVitSheet()">+ Добавить</button>
-    </div>
-    <div class="vit-date" id="vitDate"></div>
-  </div>
-  <div class="vit-summary" id="vitSummary"></div>
-  <div class="vit-progress-wrap"><div class="vit-progress-bar"><div class="vit-progress-fill" id="vitProgressFill" style="width:0%"></div></div></div>
-  <div class="section-label">Сегодня</div>
-  <div class="vit-list" id="vitList"></div>
-</div>
-<button class="fab" id="mainFab" onclick="openSheet()" aria-label="Добавить">+</button>
-<div class="confetti-layer" id="confettiLayer"></div>
-<div class="toast" id="toast"></div>
-<div class="tabbar">
-  <div class="tab active" id="tab-planner" onclick="switchTab('planner')">
-    <div class="tab-icon">📅</div>
-    <div class="tab-label">Расписание</div>
-  </div>
-  <div class="tab" id="tab-vitamins" onclick="switchTab('vitamins')">
-    <div class="tab-icon">💊</div>
-    <div class="tab-label">Витамины</div>
-  </div>
-</div>
+
 <div class="overlay" id="overlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-title">Новая задача</div>
-    <div class="field"><label>Название</label><input type="text" id="taskInput" placeholder="Что нужно сделать?"></div>
-    <div class="field"><label>Повтор</label>
-      <select id="taskRepeat" onchange="toggleRepeatControls()">
-        <option value="once">Один раз</option>
-        <option value="weekly">Повторять каждую неделю</option>
-      </select>
-      <div class="repeat-days" id="repeatDays">
-        <button type="button" class="repeat-day" data-day="1" onclick="toggleRepeatDay(this,1)">Пн</button>
-        <button type="button" class="repeat-day" data-day="2" onclick="toggleRepeatDay(this,2)">Вт</button>
-        <button type="button" class="repeat-day" data-day="3" onclick="toggleRepeatDay(this,3)">Ср</button>
-        <button type="button" class="repeat-day" data-day="4" onclick="toggleRepeatDay(this,4)">Чт</button>
-        <button type="button" class="repeat-day" data-day="5" onclick="toggleRepeatDay(this,5)">Пт</button>
-        <button type="button" class="repeat-day" data-day="6" onclick="toggleRepeatDay(this,6)">Сб</button>
-        <button type="button" class="repeat-day" data-day="0" onclick="toggleRepeatDay(this,0)">Вс</button>
+    <div class="field">
+      <label class="label">Название</label>
+      <input class="input" type="text" id="taskInput" placeholder="Например: тренировка грудь">
+    </div>
+    <div class="field">
+      <label class="label">Тип</label>
+      <div class="choice-row">
+        <button type="button" class="choice active" data-repeat="once" onclick="setDraftRepeat('once',this)">Один раз</button>
+        <button type="button" class="choice" data-repeat="weekly" onclick="setDraftRepeat('weekly',this)">Повтор</button>
+      </div>
+      <div class="weekday-row" id="repeatDays">
+        <button type="button" class="weekday" data-day="1" onclick="toggleRepeatDay(this,1)">Пн</button>
+        <button type="button" class="weekday" data-day="2" onclick="toggleRepeatDay(this,2)">Вт</button>
+        <button type="button" class="weekday" data-day="3" onclick="toggleRepeatDay(this,3)">Ср</button>
+        <button type="button" class="weekday" data-day="4" onclick="toggleRepeatDay(this,4)">Чт</button>
+        <button type="button" class="weekday" data-day="5" onclick="toggleRepeatDay(this,5)">Пт</button>
+        <button type="button" class="weekday" data-day="6" onclick="toggleRepeatDay(this,6)">Сб</button>
+        <button type="button" class="weekday" data-day="0" onclick="toggleRepeatDay(this,0)">Вс</button>
       </div>
     </div>
-    <div class="field-row">
-      <div class="field"><label>Время</label><input type="time" id="taskTime"></div>
-      <div class="field"><label>Категория</label>
-        <select id="taskCat">
-          <option value="work">💼 Работа</option>
-          <option value="train">🏋️ Тренировка</option>
-          <option value="life">🏠 Дела</option>
-        </select>
+    <div class="field-grid">
+      <div class="field">
+        <label class="label">Время</label>
+        <input class="input" type="time" id="taskTime">
+      </div>
+      <div class="field">
+        <label class="label">Приоритет</label>
+        <div class="choice-row">
+          <button type="button" class="choice" data-priority="high" onclick="setDraftPriority('high',this)">Выс.</button>
+          <button type="button" class="choice active" data-priority="mid" onclick="setDraftPriority('mid',this)">Сред.</button>
+          <button type="button" class="choice" data-priority="low" onclick="setDraftPriority('low',this)">Низ.</button>
+        </div>
       </div>
     </div>
-    <div class="field"><label>Приоритет</label>
-      <select id="taskPriority">
-        <option value="high">🔴 Высокий</option>
-        <option value="mid">🟡 Средний</option>
-        <option value="low">🟢 Низкий</option>
-      </select>
+    <div class="field">
+      <label class="label">Категория</label>
+      <div class="choice-row">
+        <button type="button" class="choice active" data-cat="work" onclick="setDraftCat('work',this)">Работа</button>
+        <button type="button" class="choice" data-cat="train" onclick="setDraftCat('train',this)">Зал</button>
+        <button type="button" class="choice" data-cat="life" onclick="setDraftCat('life',this)">Дела</button>
+      </div>
     </div>
-    <button class="btn-save" onclick="addTask()">Добавить задачу</button>
-    <button class="btn-cancel" onclick="closeSheet()">Отмена</button>
+    <div class="sheet-actions">
+      <button class="primary" onclick="addTask()">Добавить</button>
+      <button class="secondary" onclick="closeSheet()">Отмена</button>
+    </div>
   </div>
 </div>
+
 <div class="overlay" id="vitOverlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-title">Новый витамин</div>
-    <div class="field"><label>Название</label><input type="text" id="vitNameInput" placeholder="Например: Витамин D3"></div>
-    <div class="field"><label>Дозировка</label><input type="text" id="vitDoseInput" placeholder="Например: 2000 МЕ · утром"></div>
-    <div class="field"><label>Иконка</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px" id="emojiPicker">
-        <span style="font-size:24px;cursor:pointer;padding:4px;border-radius:8px;transition:transform 0.2s" onclick="selectEmoji(this,'💊')">💊</span>
-        <span style="font-size:24px;cursor:pointer;padding:4px;border-radius:8px;transition:transform 0.2s" onclick="selectEmoji(this,'🟡')">🟡</span>
-        <span style="font-size:24px;cursor:pointer;padding:4px;border-radius:8px;transition:transform 0.2s" onclick="selectEmoji(this,'🔴')">🔴</span>
-        <span style="font-size:24px;cursor:pointer;padding:4px;border-radius:8px;transition:transform 0.2s" onclick="selectEmoji(this,'🟠')">🟠</span>
-        <span style="font-size:24px;cursor:pointer;padding:4px;border-radius:8px;transition:transform 0.2s" onclick="selectEmoji(this,'🫐')">🫐</span>
-        <span style="font-size:24px;cursor:pointer;padding:4px;border-radius:8px;transition:transform 0.2s" onclick="selectEmoji(this,'🌿')">🌿</span>
-        <span style="font-size:24px;cursor:pointer;padding:4px;border-radius:8px;transition:transform 0.2s" onclick="selectEmoji(this,'⚡')">⚡</span>
-        <span style="font-size:24px;cursor:pointer;padding:4px;border-radius:8px;transition:transform 0.2s" onclick="selectEmoji(this,'🧴')">🧴</span>
-        <span style="font-size:24px;cursor:pointer;padding:4px;border-radius:8px;transition:transform 0.2s" onclick="selectEmoji(this,'🐟')">🐟</span>
-        <span style="font-size:24px;cursor:pointer;padding:4px;border-radius:8px;transition:transform 0.2s" onclick="selectEmoji(this,'🌞')">🌞</span>
+    <div class="field">
+      <label class="label">Название</label>
+      <input class="input" type="text" id="vitNameInput" placeholder="Например: витамин D3">
+    </div>
+    <div class="field">
+      <label class="label">Дозировка</label>
+      <input class="input" type="text" id="vitDoseInput" placeholder="2000 МЕ, утром">
+    </div>
+    <div class="field">
+      <label class="label">Иконка</label>
+      <div class="emoji-row" id="emojiPicker">
+        <button type="button" class="emoji-choice active" onclick="selectEmoji(this,'💊')">💊</button>
+        <button type="button" class="emoji-choice" onclick="selectEmoji(this,'🟡')">🟡</button>
+        <button type="button" class="emoji-choice" onclick="selectEmoji(this,'🔴')">🔴</button>
+        <button type="button" class="emoji-choice" onclick="selectEmoji(this,'🌿')">🌿</button>
+        <button type="button" class="emoji-choice" onclick="selectEmoji(this,'⚡')">⚡</button>
+        <button type="button" class="emoji-choice" onclick="selectEmoji(this,'🌞')">🌞</button>
       </div>
     </div>
-    <button class="btn-save" onclick="addVitamin()">Добавить витамин</button>
-    <button class="btn-cancel" onclick="closeVitSheet()">Отмена</button>
+    <div class="sheet-actions">
+      <button class="primary" onclick="addVitamin()">Добавить</button>
+      <button class="secondary" onclick="closeVitSheet()">Отмена</button>
+    </div>
   </div>
 </div>
+
 <script>
 const DAYS=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+const MONTHS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 const today=new Date();
 const todayIdx=today.getDay();
 let selectedDay=todayIdx;
@@ -273,37 +601,15 @@ let filterCat='all';
 let selectedEmoji='💊';
 let currentTab='planner';
 let selectedRepeatDays=[];
+let draftRepeat='once';
+let draftCat='work';
+let draftPriority='mid';
 let toastTimer=null;
+
 function load(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function makeId(prefix){return prefix+Date.now()+Math.floor(Math.random()*10000)}
 function escapeHtml(value){return String(value||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function showToast(text){
-  const toast=document.getElementById('toast');
-  toast.textContent=text;
-  toast.classList.remove('show');
-  void toast.offsetWidth;
-  toast.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>toast.classList.remove('show'),1600);
-}
-function showConfetti(){
-  const layer=document.getElementById('confettiLayer');
-  const colors=['#2481cc','#1d9e75','#ef9f27','#e24b4a','#5a3fb5'];
-  for(let i=0;i<18;i++){
-    const piece=document.createElement('span');
-    piece.className='confetti-piece';
-    piece.style.left='50%';
-    piece.style.top='38%';
-    piece.style.background=colors[i%colors.length];
-    piece.style.setProperty('--x',(Math.random()*220-110)+'px');
-    piece.style.setProperty('--y',(Math.random()*170+70)+'px');
-    piece.style.setProperty('--r',(Math.random()*540-270)+'deg');
-    piece.style.animationDelay=(Math.random()*120)+'ms';
-    layer.appendChild(piece);
-    setTimeout(()=>piece.remove(),1100);
-  }
-}
 function dateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function dateForDay(day){
   const d=new Date(today);
@@ -311,6 +617,32 @@ function dateForDay(day){
   return d;
 }
 function selectedDateKey(){return dateKey(dateForDay(selectedDay))}
+function haptic(kind='light'){try{window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(kind)}catch(e){}}
+function showToast(text){
+  const toast=document.getElementById('toast');
+  toast.textContent=text;
+  toast.classList.remove('show');
+  void toast.offsetWidth;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toast.classList.remove('show'),1550);
+}
+function showConfetti(){
+  const layer=document.getElementById('confettiLayer');
+  const colors=['#4da3ff','#4bd18a','#f4bd50','#ff6a5f','#a78bfa'];
+  for(let i=0;i<18;i++){
+    const piece=document.createElement('span');
+    piece.className='confetti-piece';
+    piece.style.background=colors[i%colors.length];
+    piece.style.setProperty('--x',(Math.random()*220-110)+'px');
+    piece.style.setProperty('--y',(Math.random()*180+70)+'px');
+    piece.style.setProperty('--r',(Math.random()*520-260)+'deg');
+    piece.style.animationDelay=(Math.random()*120)+'ms';
+    layer.appendChild(piece);
+    setTimeout(()=>piece.remove(),1000);
+  }
+}
+
 let tasks=load('planner_tasks_by_date');
 let recurringTasks=load('planner_recurring_tasks')||[];
 let recurringDone=load('planner_recurring_done')||{};
@@ -325,29 +657,10 @@ if(!tasks){
 }
 let vitamins=load('planner_vitamins')||[];
 let vitTaken=load('planner_vitTaken')||{};
-function switchTab(tab){
-  currentTab=tab;
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page-'+tab).classList.add('active');
-  document.getElementById('tab-'+tab).classList.add('active');
-  const fab=document.getElementById('mainFab');
-  if(tab==='vitamins'){fab.onclick=openVitSheet;renderVitamins();}
-  else{fab.onclick=openSheet;}
-}
-function buildDays(){
-  const nav=document.getElementById('daysNav');
-  nav.innerHTML='';
-  for(let i=0;i<7;i++){
-    const d=dateForDay(i);
-    const hasTasks=getTasksForDay(i).length>0;
-    const btn=document.createElement('button');
-    btn.className='day-chip'+(i===todayIdx?' today':'')+(i===selectedDay?' active':'');
-    btn.innerHTML=`<span class="dn">${DAYS[i]}</span><span class="dd">${d.getDate()}</span>${hasTasks?'<span class="dot"></span>':'<span style="height:6px"></span>'}`;
-    btn.onclick=()=>{selectedDay=i;buildDays();renderTasks()};
-    nav.appendChild(btn);
-  }
-}
+
+function formatDate(d){return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`}
+function catLabel(cat){return cat==='work'?'Работа':cat==='train'?'Зал':'Дела'}
+function priorityLabel(p){return p==='high'?'Высокий':p==='mid'?'Средний':'Низкий'}
 function getTasksForDay(day){
   const key=dateKey(dateForDay(day));
   const oneTime=(tasks[key]||[]).map(t=>({...t,viewId:'t-'+t.id,recurring:false}));
@@ -356,23 +669,62 @@ function getTasksForDay(day){
     .map(t=>({...t,viewId:'r-'+t.id,recurring:true,done:!!(recurringDone[key]&&recurringDone[key][t.id])}));
   return oneTime.concat(repeated);
 }
-function taskCatLabel(cat){return cat==='work'?'💼 Работа':cat==='train'?'🏋️ Тренировка':'🏠 Дела'}
+
+function buildDays(){
+  const nav=document.getElementById('daysNav');
+  nav.innerHTML='';
+  for(let i=0;i<7;i++){
+    const d=dateForDay(i);
+    const dayTasks=getTasksForDay(i);
+    const btn=document.createElement('button');
+    btn.className='day-chip'+(i===todayIdx?' today':'')+(i===selectedDay?' active':'')+(dayTasks.length?' has-items':'');
+    btn.innerHTML=`<span class="day-name">${DAYS[i]}</span><span class="day-num">${d.getDate()}</span><span class="day-dot"></span>`;
+    btn.onclick=()=>{selectedDay=i;haptic();buildDays();renderTasks()};
+    nav.appendChild(btn);
+  }
+}
+
 function renderTasks(){
   const list=document.getElementById('tasksList');
+  const dayDate=dateForDay(selectedDay);
   const all=getTasksForDay(selectedDay);
-  let dt=all.filter(t=>filterCat==='all'||t.cat===filterCat);
-  dt=dt.sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  let visible=all.filter(t=>filterCat==='all'||t.cat===filterCat);
+  visible=visible.sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   const done=all.filter(t=>t.done).length;
+  const left=Math.max(all.length-done,0);
   const pct=all.length?Math.round(done/all.length*100):0;
-  document.getElementById('progressFill').style.width=pct+'%';
-  document.getElementById('statsRow').innerHTML=`<div class="stat"><div class="stat-n">${all.length}</div><div class="stat-l">задач</div></div><div class="stat"><div class="stat-n">${done}</div><div class="stat-l">готово</div></div><div class="stat"><div class="stat-n">${pct}%</div><div class="stat-l">прогресс</div></div>`;
-  if(!dt.length){list.innerHTML='<div class="empty">Нет задач на этот день<br>Нажми + чтобы добавить</div>';return}
-  list.innerHTML=dt.map((t,i)=>{
-    const repeatLabel=t.recurring?`<span class="repeat-badge">↻ ${(t.days||[]).map(d=>DAYS[d]).join(' ')}</span>`:'';
-    return `<div class="task-card ${t.cat} ${t.done?'done':''}" style="animation-delay:${i*0.05}s" id="card-${t.viewId}"><button class="check ${t.done?'checked':''}" type="button" onclick="toggle('${t.viewId}')" aria-label="Готово">${t.done?'✓':''}</button><div class="task-body"><div class="task-title">${escapeHtml(t.title)}</div><div class="task-meta">${t.time?`<span class="task-time">⏰ ${escapeHtml(t.time)}</span>`:''}<span class="cat-badge ${t.cat}">${taskCatLabel(t.cat)}</span>${repeatLabel}</div></div><div class="task-actions"><div class="priority-dot ${t.priority}"></div><button class="task-delete" type="button" onclick="deleteTask('${t.viewId}')" aria-label="Удалить">×</button></div></div>`;
+
+  document.getElementById('plannerDate').textContent=formatDate(dayDate);
+  document.getElementById('progressDonut').style.setProperty('--progress',pct*3.6+'deg');
+  document.getElementById('progressText').textContent=pct+'%';
+  document.getElementById('overviewTitle').textContent=all.length?(left?`${left} в работе`:'День закрыт'):'Свободный день';
+  document.getElementById('overviewMeta').textContent=all.length?`${done} из ${all.length} выполнено`:'Можно оставить его пустым';
+  document.getElementById('statsRow').innerHTML=`<div class="stat"><div class="stat-value">${all.length}</div><div class="stat-label">задач</div></div><div class="stat"><div class="stat-value">${done}</div><div class="stat-label">готово</div></div><div class="stat"><div class="stat-value">${pct}%</div><div class="stat-label">прогресс</div></div>`;
+
+  if(!visible.length){
+    list.innerHTML='<div class="empty"><div class="empty-title">Нет задач</div><div>Этот список пока чистый</div></div>';
+    return;
+  }
+  list.innerHTML=visible.map((t,i)=>{
+    const days=t.recurring?`<span class="pill">${(t.days||[]).map(d=>DAYS[d]).join(' ')}</span>`:'';
+    const time=t.time?`<span class="pill">${escapeHtml(t.time)}</span>`:'';
+    return `<div class="task-row ${t.cat} ${t.done?'done':''}" style="animation-delay:${i*0.035}s">
+      <button class="check ${t.done?'checked':''}" onclick="toggleTask('${t.viewId}')" aria-label="Готово">${t.done?'✓':''}</button>
+      <div>
+        <div class="task-title">${escapeHtml(t.title)}</div>
+        <div class="task-meta">
+          ${time}
+          <span class="pill ${t.cat}">${catLabel(t.cat)}</span>
+          ${days}
+          <span class="pill"><span class="priority ${t.priority}"></span>${priorityLabel(t.priority)}</span>
+        </div>
+      </div>
+      <button class="icon-btn delete" onclick="deleteTask('${t.viewId}')" aria-label="Удалить">×</button>
+    </div>`;
   }).join('');
 }
-function toggle(viewId){
+
+function toggleTask(viewId){
   const key=selectedDateKey();
   const type=viewId.slice(0,1);
   const id=viewId.slice(2);
@@ -387,51 +739,85 @@ function toggle(viewId){
     const t=arr.find(x=>String(x.id)===id);
     if(t){t.done=!t.done;becameDone=!!t.done;save('planner_tasks_by_date',tasks)}
   }
-  renderTasks();buildDays();
+  haptic(becameDone?'medium':'light');
+  renderTasks();
+  buildDays();
   if(becameDone){showConfetti();showToast('Готово')}
 }
+
 function deleteTask(viewId){
   const key=selectedDateKey();
   const type=viewId.slice(0,1);
   const id=viewId.slice(2);
   if(type==='r'){
     recurringTasks=recurringTasks.filter(t=>String(t.id)!==id);
-    Object.keys(recurringDone).forEach(doneKey=>{if(recurringDone[doneKey])delete recurringDone[doneKey][id]});
+    Object.keys(recurringDone).forEach(k=>{if(recurringDone[k])delete recurringDone[k][id]});
     save('planner_recurring_tasks',recurringTasks);
     save('planner_recurring_done',recurringDone);
   }else{
     tasks[key]=(tasks[key]||[]).filter(t=>String(t.id)!==id);
     save('planner_tasks_by_date',tasks);
   }
-  renderTasks();buildDays();showToast('Удалено');
+  haptic();
+  renderTasks();
+  buildDays();
+  showToast('Удалено');
 }
-function setFilter(cat,btn){filterCat=cat;document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));btn.classList.add('active');renderTasks()}
-function openSheet(){selectedRepeatDays=[selectedDay];syncRepeatButtons();document.getElementById('overlay').classList.add('open');setTimeout(()=>document.getElementById('taskInput').focus(),300)}
+
+function setFilter(cat,btn){
+  filterCat=cat;
+  document.querySelectorAll('.filter-btn').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  haptic();
+  renderTasks();
+}
+function jumpToday(){selectedDay=todayIdx;haptic();buildDays();renderTasks()}
+
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  const fab=document.getElementById('mainFab');
+  if(tab==='vitamins'){fab.onclick=openVitSheet;renderVitamins()}else{fab.onclick=openSheet}
+  haptic();
+}
+
+function openSheet(){
+  draftRepeat='once';
+  draftCat=filterCat==='all'?'work':filterCat;
+  draftPriority='mid';
+  selectedRepeatDays=[selectedDay];
+  syncDraftControls();
+  document.getElementById('overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('taskInput').focus(),250);
+}
 function closeSheet(){
   document.getElementById('overlay').classList.remove('open');
   document.getElementById('taskInput').value='';
   document.getElementById('taskTime').value='';
-  document.getElementById('taskRepeat').value='once';
-  selectedRepeatDays=[];
-  syncRepeatButtons();
-  toggleRepeatControls();
 }
-function toggleRepeatControls(){document.getElementById('repeatDays').classList.toggle('open',document.getElementById('taskRepeat').value==='weekly')}
+function setDraftRepeat(value,btn){draftRepeat=value;syncDraftControls();haptic()}
+function setDraftCat(value,btn){draftCat=value;syncDraftControls();haptic()}
+function setDraftPriority(value,btn){draftPriority=value;syncDraftControls();haptic()}
+function syncDraftControls(){
+  document.querySelectorAll('[data-repeat]').forEach(btn=>btn.classList.toggle('active',btn.dataset.repeat===draftRepeat));
+  document.querySelectorAll('[data-cat]').forEach(btn=>btn.classList.toggle('active',btn.dataset.cat===draftCat));
+  document.querySelectorAll('[data-priority]').forEach(btn=>btn.classList.toggle('active',btn.dataset.priority===draftPriority));
+  document.getElementById('repeatDays').classList.toggle('open',draftRepeat==='weekly');
+  document.querySelectorAll('.weekday').forEach(btn=>btn.classList.toggle('active',selectedRepeatDays.includes(Number(btn.dataset.day))));
+}
 function toggleRepeatDay(btn,day){
   selectedRepeatDays=selectedRepeatDays.includes(day)?selectedRepeatDays.filter(d=>d!==day):selectedRepeatDays.concat(day);
-  syncRepeatButtons();
-}
-function syncRepeatButtons(){
-  document.querySelectorAll('.repeat-day').forEach(btn=>{
-    const day=Number(btn.dataset.day);
-    btn.classList.toggle('active',selectedRepeatDays.includes(day));
-  });
+  syncDraftControls();
+  haptic();
 }
 function addTask(){
   const title=document.getElementById('taskInput').value.trim();
-  if(!title)return;
-  const base={title,time:document.getElementById('taskTime').value,cat:document.getElementById('taskCat').value,priority:document.getElementById('taskPriority').value};
-  if(document.getElementById('taskRepeat').value==='weekly'){
+  if(!title){showToast('Название пустое');return}
+  const base={title,time:document.getElementById('taskTime').value,cat:draftCat,priority:draftPriority};
+  if(draftRepeat==='weekly'){
     const days=selectedRepeatDays.length?selectedRepeatDays:[selectedDay];
     recurringTasks.push({...base,id:makeId('r'),days});
     save('planner_recurring_tasks',recurringTasks);
@@ -443,38 +829,97 @@ function addTask(){
     save('planner_tasks_by_date',tasks);
     showToast('Задача добавлена');
   }
-  closeSheet();renderTasks();buildDays();
+  haptic('medium');
+  closeSheet();
+  renderTasks();
+  buildDays();
 }
-document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeSheet()});
-function getTodayKey(){return dateKey(new Date())}
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeSheet()});
+
+function todayKey(){return dateKey(new Date())}
 function renderVitamins(){
-  const todayKey=getTodayKey();
-  if(!vitTaken[todayKey])vitTaken[todayKey]={};
-  const taken=Object.values(vitTaken[todayKey]).filter(Boolean).length;
+  const key=todayKey();
+  if(!vitTaken[key])vitTaken[key]={};
+  const taken=Object.values(vitTaken[key]).filter(Boolean).length;
   const total=vitamins.length;
   const pct=total?Math.round(taken/total*100):0;
-  const days=['вс','пн','вт','ср','чт','пт','сб'];
-  const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-  const now=new Date();
-  document.getElementById('vitDate').textContent=`${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
-  document.getElementById('vitSummary').innerHTML=`<div class="vit-stat"><div class="vit-stat-n">${taken}</div><div class="vit-stat-l">принято</div></div><div class="vit-stat"><div class="vit-stat-n">${total-taken}</div><div class="vit-stat-l">осталось</div></div><div class="vit-stat"><div class="vit-stat-n">${pct}%</div><div class="vit-stat-l">выполнено</div></div>`;
-  document.getElementById('vitProgressFill').style.width=pct+'%';
+  document.getElementById('vitDate').textContent=formatDate(new Date());
+  document.getElementById('vitCount').textContent=`${taken}/${total}`;
+  document.getElementById('vitCaption').textContent=total?(taken===total?'Все закрыто':'На сегодня'):'Список пуст';
+  document.getElementById('vitProgress').style.width=pct+'%';
   const list=document.getElementById('vitList');
-  if(!vitamins.length){list.innerHTML='<div class="vit-empty">Нет витаминов<br>Нажми + чтобы добавить</div>';return}
+  if(!vitamins.length){
+    list.innerHTML='<div class="empty"><div class="empty-title">Нет витаминов</div><div>Список пока чистый</div></div>';
+    return;
+  }
   list.innerHTML=vitamins.map((v,i)=>{
-    const isTaken=!!vitTaken[todayKey][v.id];
-    return `<div class="vit-card" style="animation-delay:${i*0.05}s"><div class="vit-icon ${isTaken?'taken':''}" style="background:${isTaken?'#e8f8f0':'#f2f2f7'}">${escapeHtml(v.emoji)}</div><div class="vit-info"><div class="vit-name" style="${isTaken?'text-decoration:line-through;color:#999':''}">${escapeHtml(v.name)}</div><div class="vit-dose">${escapeHtml(v.dose||'')}</div></div><label class="vit-toggle"><input type="checkbox" ${isTaken?'checked':''} onchange="toggleVit('${v.id}',this.checked)"><span class="vit-toggle-track"></span><span class="vit-toggle-thumb"></span></label><button class="vit-delete" onclick="deleteVit('${v.id}')" aria-label="Удалить">×</button></div>`;
+    const isTaken=!!vitTaken[key][v.id];
+    return `<div class="vit-row ${isTaken?'taken':''}" style="animation-delay:${i*0.035}s">
+      <div class="vit-icon">${escapeHtml(v.emoji)}</div>
+      <div>
+        <div class="vit-name">${escapeHtml(v.name)}</div>
+        <div class="vit-dose">${escapeHtml(v.dose||'')}</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" ${isTaken?'checked':''} onchange="toggleVit('${v.id}',this.checked)">
+        <span class="switch-track"></span>
+        <span class="switch-thumb"></span>
+      </label>
+      <button class="icon-btn delete" onclick="deleteVit('${v.id}')" aria-label="Удалить">×</button>
+    </div>`;
   }).join('');
 }
-function toggleVit(id,checked){const todayKey=getTodayKey();if(!vitTaken[todayKey])vitTaken[todayKey]={};vitTaken[todayKey][id]=checked;save('planner_vitTaken',vitTaken);if(checked){showConfetti();showToast('Принято')}setTimeout(()=>renderVitamins(),300)}
-function deleteVit(id){vitamins=vitamins.filter(v=>v.id!==id);save('planner_vitamins',vitamins);renderVitamins();showToast('Удалено')}
-function selectEmoji(el,emoji){selectedEmoji=emoji;document.querySelectorAll('#emojiPicker span').forEach(s=>s.style.background='transparent');el.style.background='rgba(36,129,204,0.15)';el.style.transform='scale(1.3)';setTimeout(()=>el.style.transform='scale(1)',200)}
-function openVitSheet(){document.getElementById('vitOverlay').classList.add('open');setTimeout(()=>document.getElementById('vitNameInput').focus(),300)}
-function closeVitSheet(){document.getElementById('vitOverlay').classList.remove('open');document.getElementById('vitNameInput').value='';document.getElementById('vitDoseInput').value='';selectedEmoji='💊'}
-function addVitamin(){const name=document.getElementById('vitNameInput').value.trim();if(!name)return;vitamins.push({id:'v'+Date.now(),name,dose:document.getElementById('vitDoseInput').value.trim(),emoji:selectedEmoji});save('planner_vitamins',vitamins);closeVitSheet();renderVitamins();showToast('Витамин добавлен')}
-document.getElementById('vitOverlay').addEventListener('click',function(e){if(e.target===this)closeVitSheet()});
-if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.ready();window.Telegram.WebApp.expand()}
-buildDays();renderTasks();
+function toggleVit(id,checked){
+  const key=todayKey();
+  if(!vitTaken[key])vitTaken[key]={};
+  vitTaken[key][id]=checked;
+  save('planner_vitTaken',vitTaken);
+  haptic(checked?'medium':'light');
+  if(checked){showConfetti();showToast('Принято')}
+  setTimeout(()=>renderVitamins(),180);
+}
+function deleteVit(id){
+  vitamins=vitamins.filter(v=>v.id!==id);
+  save('planner_vitamins',vitamins);
+  renderVitamins();
+  haptic();
+  showToast('Удалено');
+}
+function openVitSheet(){
+  selectedEmoji='💊';
+  document.querySelectorAll('.emoji-choice').forEach((btn,i)=>btn.classList.toggle('active',i===0));
+  document.getElementById('vitOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('vitNameInput').focus(),250);
+}
+function closeVitSheet(){
+  document.getElementById('vitOverlay').classList.remove('open');
+  document.getElementById('vitNameInput').value='';
+  document.getElementById('vitDoseInput').value='';
+}
+function selectEmoji(el,emoji){
+  selectedEmoji=emoji;
+  document.querySelectorAll('.emoji-choice').forEach(btn=>btn.classList.remove('active'));
+  el.classList.add('active');
+  haptic();
+}
+function addVitamin(){
+  const name=document.getElementById('vitNameInput').value.trim();
+  if(!name){showToast('Название пустое');return}
+  vitamins.push({id:'v'+Date.now(),name,dose:document.getElementById('vitDoseInput').value.trim(),emoji:selectedEmoji});
+  save('planner_vitamins',vitamins);
+  closeVitSheet();
+  renderVitamins();
+  haptic('medium');
+  showToast('Витамин добавлен');
+}
+document.getElementById('vitOverlay').addEventListener('click',e=>{if(e.target.id==='vitOverlay')closeVitSheet()});
+
+if(window.Telegram&&window.Telegram.WebApp){
+  window.Telegram.WebApp.ready();
+  window.Telegram.WebApp.expand();
+}
+buildDays();
+renderTasks();
 </script>
 </body>
 </html>
